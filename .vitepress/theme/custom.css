@@ -1,0 +1,305 @@
+/* ============================================================
+   Enclavia docs — design tokens applied to VitePress vars.
+   Black vacuum. White light. Green attestation (used sparingly).
+   ============================================================ */
+
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 300; font-display: swap;
+  src: url('/fonts/Inter_18pt-Light.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 300; font-display: swap;
+  src: url('/fonts/Inter_18pt-LightItalic.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('/fonts/Inter_18pt-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: italic; font-weight: 400; font-display: swap;
+  src: url('/fonts/Inter_18pt-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('/fonts/Inter_18pt-Medium.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('/fonts/Inter_18pt-SemiBold.ttf') format('truetype'); }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('/fonts/Inter_18pt-Bold.ttf') format('truetype'); }
+
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('/fonts/Lora-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: italic; font-weight: 400; font-display: swap;
+  src: url('/fonts/Lora-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('/fonts/Lora-Medium.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('/fonts/Lora-SemiBold.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('/fonts/Lora-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: italic; font-weight: 700; font-display: swap;
+  src: url('/fonts/Lora-BoldItalic.ttf') format('truetype'); }
+
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 300; font-display: swap;
+  src: url('/fonts/JetBrainsMono-Light.ttf') format('truetype'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400; font-display: swap;
+  src: url('/fonts/JetBrainsMono-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: italic; font-weight: 400; font-display: swap;
+  src: url('/fonts/JetBrainsMono-Italic.ttf') format('truetype'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 500; font-display: swap;
+  src: url('/fonts/JetBrainsMono-Medium.ttf') format('truetype'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('/fonts/JetBrainsMono-SemiBold.ttf') format('truetype'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('/fonts/JetBrainsMono-Bold.ttf') format('truetype'); }
+
+:root {
+  --en-bg-primary:   #0a0a0a;
+  --en-bg-secondary: #0f0f0f;
+  --en-bg-card:      #161616;
+  --en-bg-elevated:  #1c1c1c;
+  --en-border:       #262626;
+  --en-border-strong:#333333;
+
+  --en-text:         #e5e5e5;
+  --en-text-strong:  #ffffff;
+  --en-text-dim:     #a3a3a3;
+  --en-text-fade:    #525252;
+
+  --en-accent:       #22c55e;
+  --en-accent-light: #4ade80;
+  --en-accent-dim:   #16a34a;
+  --en-accent-deep:  #15803d;
+  --en-accent-glow:  rgba(34,197,94,0.35);
+  --en-accent-subtle:rgba(34,197,94,0.06);
+
+  --en-serif: 'Lora', Georgia, 'Times New Roman', serif;
+  --en-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --en-mono:  'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+}
+
+/* ─────────── VitePress dark-theme variable overrides ─────────── */
+.dark {
+  --vp-c-bg:         var(--en-bg-primary);
+  --vp-c-bg-alt:     var(--en-bg-secondary);
+  --vp-c-bg-elv:     var(--en-bg-card);
+  --vp-c-bg-soft:    var(--en-bg-card);
+
+  --vp-c-divider:    var(--en-border);
+  --vp-c-gutter:     var(--en-border);
+
+  --vp-c-border:     var(--en-border);
+  --vp-c-border-hover: var(--en-border-strong);
+
+  --vp-c-text-1:     var(--en-text);
+  --vp-c-text-2:     var(--en-text-dim);
+  --vp-c-text-3:     var(--en-text-fade);
+
+  --vp-c-default-1:  var(--en-bg-card);
+  --vp-c-default-2:  var(--en-bg-elevated);
+  --vp-c-default-3:  var(--en-border);
+  --vp-c-default-soft: rgba(255,255,255,0.04);
+
+  --vp-c-brand-1:    var(--en-accent);
+  --vp-c-brand-2:    var(--en-accent-light);
+  --vp-c-brand-3:    var(--en-accent-dim);
+  --vp-c-brand-soft: var(--en-accent-subtle);
+
+  --vp-c-tip-1:      var(--en-accent);
+  --vp-c-tip-2:      var(--en-accent-light);
+  --vp-c-tip-3:      var(--en-accent-dim);
+  --vp-c-tip-soft:   var(--en-accent-subtle);
+
+  --vp-button-brand-bg:        var(--en-accent);
+  --vp-button-brand-hover-bg:  var(--en-accent-light);
+  --vp-button-brand-active-bg: var(--en-accent-dim);
+  --vp-button-brand-text:      var(--en-bg-primary);
+  --vp-button-brand-hover-text:var(--en-bg-primary);
+  --vp-button-brand-border:    var(--en-accent);
+
+  --vp-code-bg:           rgba(255,255,255,0.04);
+  --vp-code-color:        var(--en-text);
+  --vp-code-block-bg:     #0d0d0d;
+
+  --vp-c-gray-soft:       rgba(255,255,255,0.04);
+  --vp-c-gray-1:          var(--en-bg-card);
+  --vp-c-gray-2:          var(--en-bg-elevated);
+  --vp-c-gray-3:          var(--en-border);
+
+  --vp-sidebar-bg-color:  var(--en-bg-primary);
+  --vp-nav-bg-color:      rgba(10,10,10,0.85);
+  --vp-nav-bg-color-mobile: var(--en-bg-primary);
+
+  --vp-font-family-base:  var(--en-sans);
+  --vp-font-family-mono:  var(--en-mono);
+}
+
+/* ─────────── Typography ─────────── */
+html, body {
+  background: var(--en-bg-primary);
+  color: var(--en-text);
+  font-family: var(--en-sans);
+}
+
+.VPDoc h1,
+.VPDoc h2,
+.VPDoc h3 {
+  font-family: var(--en-serif);
+  font-weight: 400;
+  color: var(--en-text-strong);
+  letter-spacing: 0.01em;
+}
+
+.VPDoc h1 { font-size: 44px; line-height: 1.15; }
+.VPDoc h2 { font-size: 30px; line-height: 1.25; border-top: none; padding-top: 48px; }
+.VPDoc h3 { font-size: 22px; line-height: 1.3; }
+
+.VPDoc h4 {
+  font-family: var(--en-sans);
+  font-weight: 500;
+  color: var(--en-text);
+}
+
+.VPDoc p,
+.VPDoc li {
+  font-family: var(--en-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--en-text);
+}
+
+.VPDoc a {
+  color: var(--en-accent);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+.VPDoc a:hover { color: var(--en-accent-light); }
+
+/* mono UI surfaces (nav, sidebar, code) */
+.VPNavBarMenuLink,
+.VPNavBarTitle .title,
+.VPSidebarItem .text,
+.VPLink.VPNavBarMenuLink {
+  font-family: var(--en-mono) !important;
+  letter-spacing: 0.04em;
+  font-size: 13px;
+}
+
+.VPNavBarTitle .title {
+  font-family: var(--en-serif) !important;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+.VPSidebarItem.level-0 > .item > .text {
+  font-family: var(--en-mono) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  color: var(--en-accent) !important;
+}
+
+.VPSidebarItem.level-1 .text { font-size: 14px; }
+
+::selection { background: var(--en-accent); color: var(--en-bg-primary); }
+
+/* ─────────── Code blocks ─────────── */
+.VPDoc div[class*='language-'] {
+  background: #0d0d0d;
+  border: 1px solid var(--en-border);
+  border-radius: 0;
+  position: relative;
+}
+.VPDoc div[class*='language-'] pre {
+  background: transparent;
+  padding: 20px 24px;
+}
+.VPDoc div[class*='language-'] code {
+  font-family: var(--en-mono);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.VPDoc :not(pre) > code {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--en-border);
+  border-radius: 2px;
+  padding: 1px 6px;
+  font-size: 0.88em;
+  color: var(--en-accent-light);
+}
+
+/* The chamfer is the brand mark — apply it to one signature surface. */
+.VPHero .image-bg,
+.chamfer {
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+
+/* Eyebrow utility for in-page section markers */
+.eyebrow {
+  display: inline-block;
+  font-family: var(--en-mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--en-accent);
+  margin-bottom: 8px;
+}
+
+/* Tip / info / warning custom blocks: keep them dark and quiet */
+.custom-block {
+  border-left: 2px solid var(--en-border-strong);
+  background: var(--en-bg-card);
+  border-radius: 0;
+  padding: 16px 20px;
+}
+.custom-block.tip {
+  border-left-color: var(--en-accent);
+  background: var(--en-accent-subtle);
+}
+.custom-block-title {
+  font-family: var(--en-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--en-accent);
+}
+.custom-block.warning .custom-block-title { color: #f59e0b; }
+.custom-block.danger .custom-block-title { color: #ef4444; }
+
+/* ─────────── Footer ─────────── */
+.VPFooter {
+  background: var(--en-bg-secondary);
+  border-top: 1px solid var(--en-border);
+}
+.VPFooter .message,
+.VPFooter .copyright {
+  font-family: var(--en-mono);
+  font-size: 12px;
+  color: var(--en-text-dim);
+  letter-spacing: 0.04em;
+}
+.VPFooter .message a {
+  color: var(--en-accent);
+  text-decoration: none;
+}
+.VPFooter .message a:hover { color: var(--en-accent-light); }
+
+/* ─────────── Home hero (for /) ─────────── */
+.VPHero .name,
+.VPHero .text {
+  font-family: var(--en-serif);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+.VPHero .name .clip {
+  background-image: linear-gradient(120deg, var(--en-accent), var(--en-accent-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.VPHero .tagline {
+  font-family: var(--en-mono);
+  font-size: 15px;
+  color: var(--en-text-dim);
+  letter-spacing: 0.02em;
+}
+
+/* Buttons in hero get a subtle chamfer */
+.VPButton {
+  border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  font-family: var(--en-mono);
+  letter-spacing: 0.04em;
+}

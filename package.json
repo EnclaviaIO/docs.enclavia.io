@@ -1,0 +1,26 @@
+{
+  "name": "docs.enclavia.io",
+  "version": "1.0.0",
+  "description": "VitePress source for docs.enclavia.io",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev .",
+    "build": "vitepress build .",
+    "preview": "vitepress preview ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EnclaviaIO/docs.enclavia.io.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EnclaviaIO/docs.enclavia.io/issues"
+  },
+  "homepage": "https://github.com/EnclaviaIO/docs.enclavia.io#readme",
+  "devDependencies": {
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-llms": "^1.12.2"
+  }
+}
