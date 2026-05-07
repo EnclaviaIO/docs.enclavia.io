@@ -77,7 +77,7 @@ The host header is filled in from the URL automatically. Each request is encrypt
 
 ## Debug-mode enclaves
 
-If you're targeting a debug-mode enclave (locally booted under QEMU, no Nitro hardware), the attestation document is a stub that echoes the handshake nonce instead of being COSE-signed. Use the builder explicitly:
+If you're targeting a debug-mode enclave, the attestation document is a stub that echoes the handshake nonce instead of being COSE-signed. Use the builder explicitly:
 
 ```rust
 let client = Client::builder("wss://...local-debug-url...")

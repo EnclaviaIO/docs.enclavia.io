@@ -45,12 +45,6 @@ enclavia --help
 
 You should see the top-level command list — `auth`, `enclave`, `push`. If that prints, you're done — head to [Authenticate](/auth).
 
-## Backend selection
+## Backend
 
-The CLI defaults to the public beta backend at `https://api.beta.enclavia.io`. If you're running a different backend (for example a local development one), set:
-
-```bash
-export ENCLAVIA_BACKEND_URL=http://localhost:3000
-```
-
-Credentials are stored per-backend under `~/.config/enclavia/`, so switching the URL switches the identity.
+The CLI talks to the public beta backend at `https://api.beta.enclavia.io`. Credentials live under `~/.config/enclavia/` after `enclavia auth login`.

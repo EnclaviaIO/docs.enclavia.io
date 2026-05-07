@@ -40,17 +40,3 @@ Error: unauthorized — run `enclavia auth login` to re-authenticate
 ```
 
 Run `enclavia auth login` again and approve a new session.
-
-## Multiple environments
-
-Credentials are namespaced by backend URL, so you can keep parallel logins for the public beta and a local backend without them clobbering each other:
-
-```bash
-# beta
-enclavia auth login
-
-# local
-ENCLAVIA_BACKEND_URL=http://localhost:3000 enclavia auth login
-```
-
-Each `enclavia` command then uses whichever backend `ENCLAVIA_BACKEND_URL` resolves to at the time of the call.

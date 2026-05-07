@@ -42,7 +42,7 @@ The pieces a user touches:
 
 ## Beta scope
 
-The public beta runs at `beta.enclavia.io` and is intended for evaluation. Image references resolve against `registry.beta.enclavia.io` under your handle (the user-chosen identifier set during onboarding). Backend defaults assume the beta environment; if you're running a self-hosted backend, set `ENCLAVIA_BACKEND_URL`.
+The public beta runs at `beta.enclavia.io` and is intended for evaluation. Image references resolve against `registry.beta.enclavia.io` under your handle (the user-chosen identifier set during onboarding). The CLI talks to `https://api.beta.enclavia.io` and the encrypted client connects to enclaves under `enclaves.beta.enclavia.io`.
 
 ## For AI agents
 
