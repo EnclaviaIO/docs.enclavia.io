@@ -26,11 +26,20 @@ The enclave is being built. Check status with:
 | `--image <ref>` | required | Image reference. Same grammar as the [push destination](/push#destination-grammar). |
 | `--instance-type <small\|medium\|large>` | `small` | Resource tier. |
 | `--container-port <port>` | unset | Plaintext port the container listens on inside the enclave. The proxy forwards decrypted bytes to `127.0.0.1:<port>` once the Noise channel is up. Required if you want the enclave to expose an HTTP service. |
-| `--storage-size-bytes <bytes>` | unset | Persistent encrypted storage size. Omit (or pass `0`) for a stateless enclave. |
+| `--storage-size-bytes <bytes>` | unset | Size of the persistent encrypted volume in bytes. Omit (or pass `0`) for a stateless enclave. Minimum is 128 MiB (`134217728`); the backend rejects anything smaller. |
 
-::: tip Persistent storage
-When `--storage-size-bytes` is set, the backend provisions a LUKS volume keyed via KMS and mounts it inside the enclave. The decryption key is released to the enclave only after the attestation document matches the image — so the storage is bound to the same identity as the running code. See [Push](/push) for why image tags are immutable.
-:::
+### Persistent storage
+
+When `--storage-size-bytes` is set, the backend provisions a LUKS2 volume on top of btrfs and mounts it inside the container at `/data` — that's where your app reads and writes. Pick a size in bytes; for example:
+
+```bash
+enclavia enclave create --image myapp:v1 --storage-size-bytes 1073741824   # 1 GiB
+enclavia enclave create --image myapp:v1 --storage-size-bytes 134217728    # 128 MiB (minimum)
+```
+
+The volume is encrypted at rest. The LUKS passphrase lives in AWS KMS and is only released to the enclave after its attestation document matches the image's PCRs — so a stolen backing file is useless without the running, attested enclave. See [Push](/push) for why image tags are immutable.
+
+Lifecycle: `enclave stop` keeps the encrypted volume around so the next start can re-mount it. `enclave destroy` removes the record and the volume.
 
 ## Image not pushed yet
 

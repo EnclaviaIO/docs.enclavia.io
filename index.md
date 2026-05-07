@@ -20,6 +20,8 @@ features:
     details: Every connection performs a Noise NN handshake, requests an attestation document, and verifies PCR0/1/2 against the image you pushed. No remote agent, no extra steps.
   - title: Encrypted from the browser
     details: The included WASM-friendly client speaks the Noise channel directly to the enclave over a WebSocket proxy. The plaintext never leaves the user's device or the enclave.
+  - title: Storage sealed to your enclave
+    details: Optional persistent volumes are LUKS-encrypted with a passphrase held in AWS KMS. The key is only released after attestation matches your image's PCRs, so the data is bound to the same identity as the code that wrote it.
 ---
 
 ## What is Enclavia
