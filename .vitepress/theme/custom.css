@@ -142,8 +142,25 @@ html, body {
 }
 
 .VPDoc h1 { font-size: 44px; line-height: 1.15; }
-.VPDoc h2 { font-size: 30px; line-height: 1.25; border-top: none; padding-top: 48px; }
-.VPDoc h3 { font-size: 22px; line-height: 1.3; }
+.VPDoc h2 {
+  font-size: 30px;
+  line-height: 1.25;
+  border-top: none;
+  margin-top: 40px;
+  padding-top: 24px;
+}
+.VPDoc h3 {
+  font-size: 22px;
+  line-height: 1.3;
+  margin-top: 28px;
+}
+
+/* Optical correction: Lora's glyphs sit lower than Inter's, so the
+   stock VitePress `#` anchor (positioned for Inter metrics) lands above
+   the visual center of the heading text. Nudge it down. */
+.VPDoc .header-anchor {
+  top: calc(50% + 2px);
+}
 
 .VPDoc h4 {
   font-family: var(--en-sans);

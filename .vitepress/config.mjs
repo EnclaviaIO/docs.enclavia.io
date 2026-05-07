@@ -1,5 +1,109 @@
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
+import fs from 'node:fs/promises'
+import path from 'node:path'
+
+const LLMS_DESCRIPTION =
+  'Documentation for Enclavia — running Docker images inside attested enclaves with end-to-end encryption from the browser. Public beta.'
+const LLMS_DETAILS =
+  'Covers installing the `enclavia` CLI, authenticating, pushing images to the per-user registry, creating enclaves, and connecting to them with the encrypted client library.'
+
+/**
+ * vitepress-plugin-llms only emits llms.txt / llms-full.txt during the
+ * Rollup `generateBundle` hook (production build). Its dev-server middleware
+ * just reads from `outDir`, so on a clean dev run both URLs 404.
+ *
+ * This shim mirrors the plugin's output well enough for dev: it walks the
+ * configured sidebar, reads each source `.md`, and serves a hand-rolled
+ * version of both files. Production output is unaffected — `vitepress build`
+ * still runs the upstream plugin and writes the canonical files.
+ */
+function llmstxtDev({ siteTitle, sidebar, description, details }) {
+  return {
+    name: 'enclavia:llmstxt-dev',
+    apply: 'serve',
+    configureServer(server) {
+      const srcDir = path.resolve('.')
+      const sidebarLinks = sidebar
+        .flatMap((group) => (group.items || []).map((item) => ({ ...item, group: group.text })))
+        .filter((item) => item.link && item.link !== '/')
+
+      async function readSource(link) {
+        const file = path.resolve(srcDir, `${link.replace(/^\//, '')}.md`)
+        return fs.readFile(file, 'utf8')
+      }
+
+      async function buildLlmsTxt() {
+        const lines = []
+        lines.push(`# ${siteTitle}`, '')
+        lines.push(`> ${description}`, '')
+        lines.push(details, '')
+        lines.push('## Table of Contents', '')
+        const groups = new Map()
+        for (const item of sidebarLinks) {
+          if (!groups.has(item.group)) groups.set(item.group, [])
+          groups.get(item.group).push(item)
+        }
+        for (const [group, items] of groups) {
+          lines.push(`### ${group}`, '')
+          for (const item of items) {
+            lines.push(`- [${item.text}](${item.link}.md)`)
+          }
+          lines.push('')
+        }
+        return lines.join('\n')
+      }
+
+      async function buildLlmsFullTxt() {
+        const parts = []
+        for (const item of sidebarLinks) {
+          let body
+          try {
+            body = await readSource(item.link)
+          } catch {
+            continue
+          }
+          parts.push(`---\nurl: ${item.link}.md\n---\n${body.trimEnd()}\n`)
+        }
+        return parts.join('\n')
+      }
+
+      server.middlewares.use(async (req, res, next) => {
+        try {
+          if (req.url === '/llms.txt' || req.url?.startsWith('/llms.txt?')) {
+            const body = await buildLlmsTxt()
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+            res.end(body)
+            return
+          }
+          if (req.url === '/llms-full.txt' || req.url?.startsWith('/llms-full.txt?')) {
+            const body = await buildLlmsFullTxt()
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+            res.end(body)
+            return
+          }
+        } catch (err) {
+          server.config.logger.error(`[enclavia:llmstxt-dev] ${err.message}`)
+        }
+        next()
+      })
+    },
+  }
+}
+
+const sidebar = [
+  {
+    text: 'Getting started',
+    items: [
+      { text: 'Overview', link: '/' },
+      { text: 'Install the CLI', link: '/install' },
+      { text: 'Authenticate', link: '/auth' },
+      { text: 'Push an image', link: '/push' },
+      { text: 'Create an enclave', link: '/create' },
+      { text: 'Connect from a client', link: '/connect' },
+    ],
+  },
+]
 
 export default defineConfig({
   title: 'Enclavia Docs',
@@ -25,19 +129,7 @@ export default defineConfig({
       { text: 'GitHub', link: 'https://github.com/EnclaviaIO/enclavia-crates' },
     ],
 
-    sidebar: [
-      {
-        text: 'Getting started',
-        items: [
-          { text: 'Overview', link: '/' },
-          { text: 'Install the CLI', link: '/install' },
-          { text: 'Authenticate', link: '/auth' },
-          { text: 'Push an image', link: '/push' },
-          { text: 'Create an enclave', link: '/create' },
-          { text: 'Connect from a client', link: '/connect' },
-        ],
-      },
-    ],
+    sidebar,
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/EnclaviaIO/enclavia-crates' },
@@ -58,8 +150,14 @@ export default defineConfig({
   vite: {
     plugins: [
       llmstxt({
-        description: 'Documentation for Enclavia — running Docker images inside attested enclaves with end-to-end encryption from the browser. Public beta.',
-        details: 'Covers installing the `enclavia` CLI, authenticating, pushing images to the per-user registry, creating enclaves, and connecting to them with the encrypted client library.',
+        description: LLMS_DESCRIPTION,
+        details: LLMS_DETAILS,
+      }),
+      llmstxtDev({
+        siteTitle: 'Enclavia',
+        sidebar,
+        description: LLMS_DESCRIPTION,
+        details: LLMS_DETAILS,
       }),
     ],
   },
