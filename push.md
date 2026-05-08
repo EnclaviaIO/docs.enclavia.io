@@ -27,6 +27,7 @@ This:
 2. Logs Docker into `registry.beta.enclavia.io` with that token.
 3. Tags `myapp:dev` as `registry.beta.enclavia.io/<handle>/myapp:v1`.
 4. Pushes the result.
+5. Prints the manifest digest (`sha256:...`) the registry recorded — the content-addressed identifier the backend will pin enclaves to.
 
 ## Destination grammar
 

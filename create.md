@@ -1,23 +1,36 @@
 # Create an enclave
 
-`enclavia enclave create` asks the backend to build an enclave image from a registry image and boot it on a Nitro instance. Builds are asynchronous; the create call returns immediately with an enclave ID and you poll for status.
+`enclavia enclave create` reserves an enclave bound to a Docker image reference and waits for you to push it. The build only starts once your `enclavia push` produces a *fresh* manifest digest for that tag — there's no way to accidentally bind a new enclave to stale content. Builds are asynchronous; you poll for status.
 
 ## The minimum
 
 ```bash
 enclavia enclave create --image myapp:v1
+enclavia push myapp:dev myapp:v1   # in the same or another shell
 ```
 
-This launches a `small` enclave from `<handle>/myapp:v1` with no persistent storage and no inbound HTTP port. The output looks like:
+This reserves a `small` enclave bound to `<handle>/myapp:v1` with no persistent storage and no inbound HTTP port. The `create` output looks like:
 
 ```
 Enclave created:
   ID:     1d2c3b4a-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-  Status: building
+  Status: waiting_for_image
 
-The enclave is being built. Check status with:
-  enclavia enclave status 1d2c3b4a-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+Push your image to start the build:
+  enclavia push <local-image> <handle>/myapp:v1
+
+The enclave is bound to whatever digest your push produces — re-pushing
+the same tag later won't affect this enclave. Check status with
+`enclavia enclave status 1d2c3b4a-5e6f-7a8b-9c0d-1e2f3a4b5c6d`.
 ```
+
+## Create-then-push
+
+Every `create` lands in `waiting_for_image`, even if `<owner>/<repo>:<tag>` already resolves in the registry. The backend snapshots the digest of whatever is at that tag right now (the *baseline*) and only flips the enclave to `building` once it sees a digest that's different from the baseline — i.e. a fresh push.
+
+The enclave's identity is then pinned to that pushed digest (`docker_image` becomes `<host>/<owner>/<repo>@sha256:...`). Re-pushing the same tag later produces a new digest but doesn't touch this enclave; it stays bound to the digest it built from. To deploy a new version, run `create` again and push to it.
+
+If the manifest doesn't exist yet at create time the baseline is empty, and the very first push wins.
 
 ## Flags
 
@@ -41,18 +54,9 @@ The volume is encrypted at rest. The LUKS passphrase lives in AWS KMS and is onl
 
 Lifecycle: `enclave stop` keeps the encrypted volume around so the next start can re-mount it. `enclave destroy` removes the record and the volume.
 
-## Image not pushed yet
+## Timeout
 
-If you call `create` before pushing, the backend accepts the request and parks the enclave in `waiting_for_image`:
-
-```
-Image was not found in the registry yet. Run:
-  enclavia push <local-image> <handle>/myapp:v1
-
-to push it. The enclave will start building automatically once the image is available.
-```
-
-The build picks up automatically once the manifest resolves. After 30 minutes without a push, the enclave moves to `error`.
+The backend polls the registry for up to **30 minutes** after `create`. If no fresh push lands in that window the enclave moves to `error` with a `no fresh push detected within 30 minutes` message.
 
 ## Lifecycle commands
 
@@ -69,7 +73,7 @@ enclavia enclave destroy <id>          # delete the enclave record (and any prov
 
 | Status | Meaning |
 |--------|---------|
-| `waiting_for_image` | Created but the source image isn't in the registry yet. |
+| `waiting_for_image` | Created and waiting for a fresh `enclavia push` to the bound tag. |
 | `building` | The backend is producing the enclave image (EIF) from your Docker image. |
 | `running` | The enclave is up. The proxy URL is `https://<id>.enclaves.beta.enclavia.io`. |
 | `stopped` | The instance is no longer running. The record (and storage if any) is preserved. |
