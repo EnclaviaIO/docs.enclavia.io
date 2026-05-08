@@ -28,6 +28,9 @@ This:
 3. Tags `myapp:dev` as `registry.beta.enclavia.io/<handle>/myapp:v1`.
 4. Pushes the result.
 5. Prints the manifest digest (`sha256:...`) the registry recorded — the content-addressed identifier the backend will pin enclaves to.
+6. Notifies the backend that the push happened, so any enclave you've already created against this tag starts building immediately (the backend also polls the registry every 15 seconds as a fallback). If the push found no enclave waiting on this tag, the CLI prints the `enclavia enclave create --image …` line you can paste to make one.
+
+The notify step uses the *push event itself* as the trigger, not just a manifest-digest change. That matters when you re-push an image whose layers the registry already cached — the registry returns the same digest, but the waiting enclave still picks up the push and starts its build.
 
 ## Destination grammar
 
