@@ -53,7 +53,9 @@ If any check fails, the call returns an error and no traffic flows.
 enclavia enclave status <enclave-id>
 ```
 
-The `PCRs:` block in the output is the source of truth. Pin those exact values; the client will refuse to connect to anything that doesn't measure to the same image.
+The `PCRs:` block in the output is the source of truth. Pin those exact values; the client will refuse to connect to anything that doesn't measure to the same identity.
+
+PCRs are **per-enclave, not per-image** — the enclave's UUID is stamped into the rootfs at build time, so two enclaves created from the same Docker image have different PCR2 values. Pinning the PCRs from `enclave status` therefore binds your client to that specific enclave, not just to its image. If you destroy and re-create an enclave from the same image, you'll get a new set of PCRs to pin.
 
 ## Sending requests
 

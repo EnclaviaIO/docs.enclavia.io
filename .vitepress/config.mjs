@@ -101,6 +101,7 @@ const sidebar = [
       { text: 'Push an image', link: '/push' },
       { text: 'Create an enclave', link: '/create' },
       { text: 'Connect from a client', link: '/connect' },
+      { text: 'Connect Claude (MCP)', link: '/mcp' },
     ],
   },
 ]
