@@ -132,7 +132,7 @@ export default defineConfig({
     logo: { src: '/mark.svg', width: 24, height: 24 },
 
     nav: [
-      { text: 'Docs', link: '/install' },
+      { text: 'Get started', link: '/install' },
       { text: 'enclavia.io', link: 'https://enclavia.io' },
       { text: 'GitHub', link: 'https://github.com/EnclaviaIO/enclavia-crates' },
     ],
