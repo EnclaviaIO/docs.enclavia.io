@@ -105,6 +105,12 @@ const sidebar = [
       { text: 'Connect an AI agent (MCP)', link: '/mcp' },
     ],
   },
+  {
+    text: 'Verify',
+    items: [
+      { text: 'Reproduce a build', link: '/reproduce' },
+    ],
+  },
 ]
 
 export default defineConfig({
