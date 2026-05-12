@@ -9,7 +9,7 @@ enclavia enclave create --image myapp:v1
 enclavia push myapp:dev myapp:v1   # in the same or another shell
 ```
 
-This reserves a `small` enclave bound to `<handle>/myapp:v1` with no persistent storage and no inbound HTTP port. The `create` output looks like:
+This reserves a `small` enclave bound to `<handle>/myapp:v1` with no persistent storage and no inbound HTTP port. The backend canonicalizes whatever you pass to `--image` into the full registry path (`registry.beta.enclavia.io/<handle>/<repo>:<tag>`) and stores *that*. The `create` output looks like:
 
 ```
 Enclave created:
@@ -32,11 +32,20 @@ The enclave's identity is then pinned to that pushed digest (`docker_image` beco
 
 If the manifest doesn't exist yet at create time the baseline is empty, and the very first push wins.
 
+## Image reference grammar
+
+`--image` accepts two forms:
+
+- `<repo>[:<tag>]` — owner defaults to your handle. `myapp:v1`, or `myapp` (tag defaults to `latest`).
+- `<owner>/<repo>[:<tag>]` — owner **must** equal your handle; the backend rejects mismatches. The form exists so the references you type and the references the backend stores look the same.
+
+`<repo>` uses the same character class as a handle. Tags follow Docker's grammar: `[A-Za-z0-9_.-]`, max 128 characters, no leading `.` or `-`. See [Push › Destination grammar](/push#destination-grammar) for the full rules.
+
 ## Flags
 
 | Flag | Default | Purpose |
 |------|---------|---------|
-| `--image <ref>` | required | Image reference. Same grammar as the [push destination](/push#destination-grammar). |
+| `--image <ref>` | required | Image reference; see [Image reference grammar](#image-reference-grammar) above. |
 | `--instance-type <small\|medium\|large>` | `small` | Resource tier. |
 | `--container-port <port>` | unset | Plaintext port the container listens on inside the enclave. The proxy forwards decrypted bytes to `127.0.0.1:<port>` once the Noise channel is up. Required if you want the enclave to expose an HTTP service. |
 | `--storage-size-bytes <bytes>` | unset | Size of the persistent encrypted volume in bytes. Omit (or pass `0`) for a stateless enclave. Minimum is 128 MiB (`134217728`); the backend rejects anything smaller. |

@@ -25,7 +25,7 @@ This:
 
 1. Asks the backend for your registry endpoint and a short-lived bearer token.
 2. Logs Docker into `registry.beta.enclavia.io` with that token.
-3. Tags `myapp:dev` as `registry.beta.enclavia.io/<handle>/myapp:v1`.
+3. Tags `myapp:dev` as `registry.beta.enclavia.io/<handle>/myapp:v1` — the CLI automatically prepends the registry host and your handle, you only ever type `<repo>:<tag>`.
 4. Pushes the result.
 5. Prints the manifest digest (`sha256:...`) the registry recorded — the content-addressed identifier the backend will pin enclaves to.
 6. Notifies the backend that the push happened, so any enclave you've already created against this tag starts building immediately (the backend also polls the registry every 15 seconds as a fallback). If the push found no enclave waiting on this tag, the CLI prints the `enclavia enclave create --image …` line you can paste to make one.
