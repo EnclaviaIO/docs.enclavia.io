@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
+import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
@@ -101,7 +102,7 @@ const sidebar = [
       { text: 'Push an image', link: '/push' },
       { text: 'Create an enclave', link: '/create' },
       { text: 'Connect from a client', link: '/connect' },
-      { text: 'Connect Claude (MCP)', link: '/mcp' },
+      { text: 'Connect an AI agent (MCP)', link: '/mcp' },
     ],
   },
 ]
@@ -146,6 +147,12 @@ export default defineConfig({
     },
 
     outline: { level: [2, 3] },
+  },
+
+  markdown: {
+    config(md) {
+      md.use(tabsMarkdownPlugin)
+    },
   },
 
   vite: {
