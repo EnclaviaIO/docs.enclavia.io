@@ -61,6 +61,18 @@ enclavia enclave create --image myapp:v1 --storage-size-bytes 134217728    # 128
 
 The volume is encrypted at rest. The LUKS passphrase lives in AWS KMS and is only released to the enclave after its attestation document matches the image's PCRs — so a stolen backing file is useless without the running, attested enclave. See [Push](/push) for why image tags are immutable.
 
+#### Why Enclavia can't change the policy after the fact
+
+A reasonable follow-up: "Enclavia controls the AWS account that owns the KMS key — couldn't an admin (rogue or coerced) just edit the key policy to grant `kms:Decrypt` to themselves, retrieve the passphrase, and decrypt the volume outside the enclave?"
+
+The answer is no, and the mechanism is a quirk of how KMS key policies work that's worth spelling out:
+
+1. **KMS key policies do not implicitly grant root access.** Unlike most AWS resource policies, the AWS account root principal only has the permissions a KMS key policy *explicitly* gives it. If a key policy doesn't list root, root cannot administer the key — full stop. ([Default key policy - AWS KMS](https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-default.html))
+2. **The key policy is created locked.** When the backend provisions the KMS key for a new enclave, it calls `CreateKey` with `BypassPolicyLockoutSafetyCheck=true` and a policy that grants `kms:Decrypt` *only* to principals presenting a Nitro attestation document with the image's PCRs, and grants `kms:PutKeyPolicy` / `kms:DeleteKey` to *no one*. The bypass flag is required because KMS normally rejects policies that would lock the key out of further management; we want exactly that lockout. ([PutKeyPolicy - AWS KMS](https://docs.aws.amazon.com/kms/latest/APIReference/API_PutKeyPolicy.html))
+3. **The policy is now immutable.** No principal — including Enclavia's AWS root, Enclavia engineers, AWS support, or anyone with `AdministratorAccess` in the account — can call `PutKeyPolicy` on this key, because the policy itself doesn't grant that permission to anyone. The key will continue to release the passphrase only to enclaves whose PCRs match, until it's eventually rotated as part of the upgrade flow.
+
+The trust boundary that protects your data is the policy that AWS KMS enforces on the key, not Enclavia's operational discipline. We deliberately set things up so that even we cannot grant ourselves access.
+
 Lifecycle: `enclave stop` keeps the encrypted volume around so the next start can re-mount it. `enclave destroy` removes the record and the volume.
 
 ## Timeout
