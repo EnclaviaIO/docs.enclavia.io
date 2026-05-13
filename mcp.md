@@ -104,5 +104,5 @@ The agent will call `enclave_list` and summarise.
 
 ## Limitations
 
-- `enclavia push` is **not** exposed as an MCP tool — pushing requires a Docker daemon and a local image, both of which live on your machine, not in the MCP server. Push from the CLI, then ask the agent to create the enclave from the resulting tag.
+- `enclavia push` is **not** exposed as an MCP tool. Pushing requires a Docker daemon and a local image, both of which live on your machine, not in the MCP server. Ask the agent to create the enclave first (it reserves a tag in your namespace); then push to that tag from the CLI to trigger the build.
 - The MCP server doesn't proxy traffic into running enclaves. To talk to an enclave's HTTP service you still use the [`enclavia` client library](/connect).

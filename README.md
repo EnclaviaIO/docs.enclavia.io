@@ -28,7 +28,7 @@ nix shell nixpkgs#nodejs_22 --command npm run preview
 ## Layout
 
 - `index.md` — landing page.
-- `install.md`, `auth.md`, `push.md`, `create.md`, `connect.md` — getting-started flow.
+- `install.md`, `auth.md`, `create.md`, `push.md`, `connect.md` — getting-started flow.
 - `.vitepress/config.mjs` — site config, sidebar, llms plugin.
 - `.vitepress/theme/custom.css` — design-system tokens applied to VitePress vars.
 - `public/fonts/` — Lora, Inter, JetBrains Mono webfonts.

@@ -10,12 +10,12 @@ hero:
       text: Install the CLI
       link: /install
     - theme: alt
-      text: Push your first image
-      link: /push
+      text: Create your first enclave
+      link: /create
 
 features:
-  - title: Push, then run
-    details: Build any Docker image. `enclavia push` uploads it to your private registry namespace. `enclavia enclave create` boots it inside an AWS Nitro enclave.
+  - title: Create, then push
+    details: '`enclavia enclave create` reserves an enclave bound to a specific tag in your private registry namespace. `enclavia push` uploads your image to that tag, which triggers the build and boots it inside an AWS Nitro enclave.'
   - title: Attested by default
     details: Every connection performs a Noise NN handshake, requests an attestation document, and verifies PCR0/1/2 against the image you pushed. No remote agent, no extra steps.
   - title: Encrypted from the browser
@@ -41,8 +41,8 @@ The pieces a user touches:
 
 1. [Install the CLI](/install).
 2. [Authenticate](/auth) by approving a session in the web UI.
-3. [Push an image](/push) to your private registry namespace.
-4. [Create an enclave](/create) from that image.
+3. [Create an enclave](/create), which reserves a tag in your private registry namespace.
+4. [Push an image](/push) to that tag, which triggers the build.
 5. [Connect](/connect) to it from your code, or [drive Claude](/mcp) at the same enclaves over MCP.
 
 ## Beta scope
