@@ -49,6 +49,9 @@ If the manifest doesn't exist yet at create time the baseline is empty, and the 
 | `--instance-type <small\|medium\|large>` | `small` | Resource tier. |
 | `--container-port <port>` | unset | Plaintext port the container listens on inside the enclave. The proxy forwards decrypted bytes to `127.0.0.1:<port>` once the Noise channel is up. Required if you want the enclave to expose an HTTP service. |
 | `--storage-size-bytes <bytes>` | unset | Size of the persistent encrypted volume in bytes. Omit (or pass `0`) for a stateless enclave. Minimum is 128 MiB (`134217728`); the backend rejects anything smaller. |
+| `--egress-allow <host:port[/proto]>` | unset (deny-all) | Permit one outbound destination. Repeatable. See [Outbound egress allowlist](/egress). |
+| `--egress-resolver <ipv4>` | unset | DNS resolver(s) the in-enclave `unbound` forwards to. Required if any `--egress-allow` is a hostname. Repeatable. |
+| `--egress-config <path>` | unset | Path to a JSON allowlist file. Mutually exclusive with `--egress-allow` / `--egress-resolver`. See [Outbound egress allowlist](/egress#json-schema). |
 
 ### Persistent storage
 
