@@ -106,6 +106,12 @@ const sidebar = [
     ],
   },
   {
+    text: 'Networking',
+    items: [
+      { text: 'Outbound egress allowlist', link: '/egress' },
+    ],
+  },
+  {
     text: 'Verify',
     items: [
       { text: 'Reproduce a build', link: '/reproduce' },

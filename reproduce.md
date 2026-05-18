@@ -10,6 +10,8 @@ You don't have to trust the host to tell you the truth about which code it boote
 
 `enclavia reproduce` answers the prior question: *what should those PCRs be?* It pulls the image the backend pinned by digest (so a later push to the same tag can't drift the build), runs the same `builder` binary the backend uses, and compares its output to the row the backend wrote at build time. Anyone can do this for `public` enclaves; owners can do it for their `private` ones (registry-enforced).
 
+The recorded inputs include the [egress allowlist](/egress): the JSON document baked into the EIF at `/etc/enclavia/egress.json`. `enclavia reproduce` rebakes the same document into the local build, so PCR2 matches. An auditor reading the reproduce output can see exactly which outbound destinations the running enclave can reach.
+
 ## Run it
 
 ```
