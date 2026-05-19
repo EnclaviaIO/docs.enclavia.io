@@ -1,0 +1,48 @@
+# Configuration for `lychee` link checker.
+#
+# Used by `.github/workflows/ci.yml` to validate links in the built
+# VitePress site. The goal is to catch dead `enclavia-samples` /
+# closed-source links before they ship; we accept some noise from
+# rate-limited or login-walled hosts.
+
+# Treat these as success in addition to the usual 2xx codes.
+# - 401: api.beta.enclavia.io / mcp.beta.enclavia.io reject unauthenticated
+#   probes; the host being up is enough for our purposes.
+# - 403/429: rate-limited or bot-walled hosts (anonymous GitHub traffic,
+#   AWS docs CDN). Not a dead link.
+accept = [200, 206, 301, 302, 303, 307, 308, 401, 403, 429]
+
+# Reasonable network budget per link.
+timeout = 20
+max_retries = 2
+retry_wait_time = 5
+
+# Be nice to upstream hosts; lychee parallelizes aggressively by default.
+max_concurrency = 8
+
+# Only check http(s) links and on-disk files. Don't try to resolve
+# `mailto:`, `tel:`, fragment-only anchors, etc.
+scheme = ["https", "http", "file"]
+
+# Skip checking links that we know are slow / authenticated / private,
+# or that are example URLs lychee can't reasonably probe.
+exclude = [
+  # Local dev links inside code examples (OAuth redirect_uri, etc).
+  "^http://localhost",
+  "^http://127\\.0\\.0\\.1",
+  # Placeholder URLs in example OAuth flows (contain `<port>` literal).
+  "<port>",
+  # The OAuth `/authorize` example URL in the auth docs has placeholder
+  # query params (`code_challenge=...`, `state=...`) that the real
+  # endpoint reasonably rejects with 400. The hostname itself is also
+  # covered by the explicit api.beta.enclavia.io root acceptance below.
+  "^https://api\\.beta\\.enclavia\\.io/oauth/authorize",
+  # Roots of the API and MCP services return 404/401 respectively, by
+  # design (neither serves a public index). The link text we ship just
+  # references the host as identifier; nothing to probe.
+  "^https://api\\.beta\\.enclavia\\.io/?$",
+  "^https://mcp\\.beta\\.enclavia\\.io/?$",
+]
+
+# Don't follow `mailto:` etc. Keep external + relative HTTP only.
+include_mail = false
