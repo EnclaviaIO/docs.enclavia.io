@@ -22,8 +22,8 @@ features:
     details: The included WASM-friendly client speaks the Noise channel directly to the enclave over a WebSocket proxy. The plaintext never leaves the user's device or the enclave.
   - title: Storage sealed to your enclave
     details: Optional persistent volumes are LUKS-encrypted with a passphrase held in AWS KMS. The key is only released after attestation matches your image's PCRs, so the data is bound to the same identity as the code that wrote it.
-  - title: Drive it from Claude
-    details: A hosted MCP server lets you manage enclaves from Claude (web or Desktop) in natural language. Same OAuth identity as the CLI, scoped per user, revocable from the dashboard.
+  - title: Drive it from your AI agent
+    details: A hosted MCP server lets you manage enclaves from Claude, ChatGPT, Cursor, the OpenAI Codex CLI, or any other MCP-aware client in natural language. Same OAuth identity as the CLI, scoped per user, revocable from the dashboard.
 ---
 
 ## What is Enclavia
@@ -35,7 +35,7 @@ The pieces a user touches:
 - **`enclavia` CLI** — authenticate, push images, create and manage enclaves.
 - **`enclavia` client library** (Rust) — connect from a server or browser, verify attestation, send HTTP through the encrypted channel.
 - **Backend API** — `https://api.beta.enclavia.io`. Documented implicitly through the CLI.
-- **MCP server** — `https://mcp.beta.enclavia.io/mcp`. Lets [Claude drive your enclaves](/mcp) over the Model Context Protocol with the same identity the CLI uses.
+- **MCP server** — `https://mcp.beta.enclavia.io/mcp`. Lets [any MCP-aware agent](/mcp) (Claude, ChatGPT, Cursor, Codex, …) drive your enclaves with the same identity the CLI uses.
 
 ## Where to start
 
@@ -43,7 +43,7 @@ The pieces a user touches:
 2. [Authenticate](/auth) by approving a session in the web UI.
 3. [Create an enclave](/create), which reserves a private repo for it in your registry namespace.
 4. [Push an image](/push) to that enclave, which triggers the build.
-5. [Connect](/connect) to it from your code, or [drive Claude](/mcp) at the same enclaves over MCP.
+5. [Connect](/connect) to it from your code, or [point an AI agent](/mcp) (Claude, ChatGPT, Cursor, Codex, …) at the same enclaves over MCP.
 
 ## Beta scope
 
