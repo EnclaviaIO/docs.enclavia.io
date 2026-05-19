@@ -87,6 +87,7 @@ The connector exposes one tool per CLI verb. Anything the agent calls runs again
 | `enclave_status` | `enclavia enclave status <id>` |
 | `enclave_logs` | reads build + runtime logs |
 | `enclave_create` | `enclavia enclave create [--instance-type ... --container-port ... --storage-size-bytes ...]` |
+| `enclave_start` | `enclavia enclave start <id>` |
 | `enclave_stop` | `enclavia enclave stop <id>` |
 | `enclave_destroy` | `enclavia enclave destroy <id>` |
 
@@ -94,13 +95,24 @@ A useful prompt to verify the connector is wired up:
 
 > List my enclaves and tell me which are running.
 
-The agent will call `enclave_list` and summarise.
+The agent will call `enclave_list` and summarise. If you're brand new, ask the agent to create an enclave for you — it will reserve one in your account and tell you the `enclavia push` command to run next. See [Sample apps](/samples) for ready-to-push images that take you from `waiting_for_image` to `running` in a few minutes.
 
 ## Scope and authentication
 
 - **Identity** is established via OAuth 2.1 (PKCE-S256) against `api.beta.enclavia.io`. The MCP server itself never sees your password or upstream identity-provider token — it only receives the API JWT minted by the backend, attached to each tool call as a `Authorization: Bearer <token>` header on the inbound MCP request.
 - **Multi-tenant by design.** The MCP server holds no per-user secrets. Two different agent sessions authorized by two different users hit the same process and only see their own enclaves.
 - **Revoking access** takes one click: open the dashboard at `beta.enclavia.io`, find the active session for `enclavia-mcp` under your sessions list, and revoke it. Subsequent tool calls from that connector will fail with `unauthorized` and the agent will offer to re-authorize.
+
+### Separate from the CLI login
+
+The MCP connector login and `enclavia auth login` ([Authenticate](/auth)) are **two distinct logins against the same Enclavia account**. They share the same consent screen at `api.beta.enclavia.io`, which is what makes them feel like a single flow, but each client (Claude, ChatGPT, your terminal, …) ends up with its own bearer token tied to its own session:
+
+| Where the token lives | What it authorizes |
+|---|---|
+| Inside your MCP client (Claude, ChatGPT, Cursor, Codex) | Tool calls from the agent: `enclave_list`, `enclave_create`, etc. |
+| `~/.config/enclavia/credentials.json` on your laptop | The `enclavia` CLI binary, including `enclavia push` (which the MCP server intentionally doesn't expose). |
+
+You can authorize one without the other. Common patterns: drive the management surface from an agent and never install the CLI (you skip `push` and reproduce, but the rest works); or run the CLI only and skip the MCP connector entirely. To go all the way from "create" to "running" you need both — the agent creates and inspects, the CLI pushes the image that flips the enclave to `building`.
 
 ## Limitations
 

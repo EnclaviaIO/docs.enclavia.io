@@ -23,7 +23,7 @@ If you don't yet have an Enclavia account, the consent flow redirects you throug
 
 ## Your handle
 
-Your **handle** is the user-facing identifier you chose during onboarding. It scopes everything you push: image references resolve against `registry.beta.enclavia.io/<handle>/<repo>:<tag>`. Handles are not currently re-assignable, so pick one you're happy living with.
+Your **handle** is the user-facing identifier you chose during onboarding. It scopes every enclave's registry repo: each `enclavia enclave create` provisions a private repo at `registry.beta.enclavia.io/<handle>/<enclave-uuid>` that you then push to. Handles are not currently re-assignable, so pick one you're happy living with.
 
 You can confirm which account is currently authenticated by listing your enclaves — the request fails with a clear error if the token is invalid:
 
@@ -49,3 +49,12 @@ Earlier CLI builds wrote a single-field credentials file (`{"token": "..."}`). T
 rm ~/.config/enclavia/credentials.json
 enclavia auth login
 ```
+
+## Different from the Claude / MCP login
+
+`enclavia auth login` only authorizes the **CLI on this laptop**. It is *not* the same login as the OAuth flow you go through when wiring up the [MCP connector](/mcp) in Claude (or ChatGPT, Cursor, Codex). Both flows present the same consent screen at `api.beta.enclavia.io` and tie back to the same Enclavia account, but each client ends up with its own session and its own bearer token:
+
+- **CLI** → token in `~/.config/enclavia/credentials.json`, used by every `enclavia` command (including `enclavia push`, which MCP intentionally doesn't expose).
+- **MCP client** → token held by the client (Claude, ChatGPT, …), used for `enclave_list`/`create`/`status`/`stop`/`destroy` tool calls.
+
+Authorizing one doesn't authorize the other. You can run the CLI without ever connecting an agent, or drive the management surface from an agent without installing the CLI. To go all the way from `create` to `running` you need both — the agent (or the CLI) creates the enclave, then `enclavia push` from your terminal uploads the image that flips it to `building`.

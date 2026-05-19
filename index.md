@@ -10,8 +10,8 @@ hero:
       text: Install the CLI
       link: /install
     - theme: alt
-      text: Create your first enclave
-      link: /create
+      text: Run a sample
+      link: /samples
 
 features:
   - title: Create, then push
@@ -38,6 +38,8 @@ The pieces a user touches:
 - **MCP server** — `https://mcp.beta.enclavia.io/mcp`. Lets [any MCP-aware agent](/mcp) (Claude, ChatGPT, Cursor, Codex, …) drive your enclaves with the same identity the CLI uses.
 
 ## Where to start
+
+The fastest path to seeing Enclavia work is to run a [sample app](/samples) end to end. For your own workload the steps are:
 
 1. [Install the CLI](/install).
 2. [Authenticate](/auth) by approving a session in the web UI.

@@ -112,6 +112,12 @@ const sidebar = [
     ],
   },
   {
+    text: 'Examples',
+    items: [
+      { text: 'Sample apps', link: '/samples' },
+    ],
+  },
+  {
     text: 'Verify',
     items: [
       { text: 'Reproduce a build', link: '/reproduce' },

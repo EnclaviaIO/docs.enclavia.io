@@ -173,7 +173,7 @@ enclavia enclave create --egress-config ./egress.json
 
 ### Try it locally
 
-A worked, end-to-end sample exercising the full egress path (a tiny Python service that does an outbound HTTPS request through the allowlist and reports the result) lands alongside the public beta in a separate `enclavia-samples` repository. Until then, the recipes above are the minimum you need to wire up egress against your own image.
+The [`enclavia-samples/egress`](https://github.com/EnclaviaIO/enclavia-samples/tree/main/egress) sample exercises the full path end to end: a tiny service that opens an outbound HTTPS connection through the allowlist and reports the result. A permitted destination returns a real response; a non-permitted destination fails at the in-enclave filter, before any packet leaves the host. Useful as a smoke test for a fresh allowlist. See [Sample apps](/samples) for the full list and the general "clone, build, push" pattern.
 
 ## Limitations
 
