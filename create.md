@@ -1,15 +1,14 @@
 # Create an enclave
 
-`enclavia enclave create` reserves an enclave bound to a Docker image reference and waits for you to push it. The build only starts once your `enclavia push` produces a *fresh* manifest digest for that tag — there's no way to accidentally bind a new enclave to stale content. Builds are asynchronous; you poll for status.
+`enclavia enclave create` reserves an enclave id and provisions a dedicated private registry repo for it at `<your-handle>/<enclave-uuid>`. The enclave starts in `waiting_for_image` and stays there until you `enclavia push` your container image into that repo. Builds are asynchronous; you poll for status.
 
 ## The minimum
 
 ```bash
-enclavia enclave create --image myapp:v1
-enclavia push myapp:dev myapp:v1   # in the same or another shell
+enclavia enclave create
 ```
 
-This reserves a `small` enclave bound to `<handle>/myapp:v1` with no persistent storage and no inbound HTTP port. The backend canonicalizes whatever you pass to `--image` into the full registry path (`registry.beta.enclavia.io/<handle>/<repo>:<tag>`) and stores *that*. The `create` output looks like:
+This reserves a `small` enclave with no persistent storage, no inbound HTTP port, and an auto-generated `<adjective>-<animal>-<NNN>` display name. The output looks like:
 
 ```
 Enclave created:
@@ -17,38 +16,40 @@ Enclave created:
   Status: waiting_for_image
 
 Push your image to start the build:
-  enclavia push <local-image> <handle>/myapp:v1
+  enclavia push <local-image> 1d2c3b4a
 
-The enclave is bound to whatever digest your push produces — re-pushing
-the same tag later won't affect this enclave. Check status with
-`enclavia enclave status 1d2c3b4a-5e6f-7a8b-9c0d-1e2f3a4b5c6d`.
+Check status with `enclavia enclave status 1d2c3b4a-5e6f-7a8b-9c0d-1e2f3a4b5c6d`.
 ```
 
-## Create-then-push
+The second argument to `enclavia push` is the enclave id (or any unique prefix that resolves to exactly one of your enclaves). The CLI tags your local image as `registry.beta.enclavia.io/<handle>/<enclave-uuid>:latest` and pushes it; the registry digest the push produces is what the backend pins the enclave to. See [Push an image](/push).
 
-Every `create` lands in `waiting_for_image`, even if `<owner>/<repo>:<tag>` already resolves in the registry. The backend snapshots the digest of whatever is at that tag right now (the *baseline*) and only flips the enclave to `building` once it sees a digest that's different from the baseline — i.e. a fresh push.
+## A more typical example
 
-The enclave's identity is then pinned to that pushed digest (`docker_image` becomes `<host>/<owner>/<repo>@sha256:...`). Re-pushing the same tag later produces a new digest but doesn't touch this enclave; it stays bound to the digest it built from. To deploy a new version, run `create` again and push to it.
+```bash
+enclavia enclave create \
+  --instance-type small \
+  --container-port 8080 \
+  --name my-api \
+  --storage-size-bytes 268435456
+```
 
-If the manifest doesn't exist yet at create time the baseline is empty, and the very first push wins.
+This reserves a `small` enclave with a 256 MiB encrypted volume, declares that the container listens on `127.0.0.1:8080` inside the enclave (so the proxy knows where to forward decrypted traffic), and labels the enclave `my-api` in the dashboard and `enclave list`.
 
-## Image reference grammar
+## How create-then-push works
 
-`--image` accepts two forms:
+Each enclave owns its own registry repo at `<your-handle>/<enclave-uuid>`. `create` provisions that repo; the first successful push to it is what flips the enclave from `waiting_for_image` to `building`, and the digest the registry assigns becomes the enclave's pinned image (`docker_image` becomes `<host>/<owner>/<enclave-uuid>@sha256:...`).
 
-- `<repo>[:<tag>]` — owner defaults to your handle. `myapp:v1`, or `myapp` (tag defaults to `latest`).
-- `<owner>/<repo>[:<tag>]` — owner **must** equal your handle; the backend rejects mismatches. The form exists so the references you type and the references the backend stores look the same.
-
-`<repo>` uses the same character class as a handle. Tags follow Docker's grammar: `[A-Za-z0-9_.-]`, max 128 characters, no leading `.` or `-`. See [Push › Destination grammar](/push#destination-grammar) for the full rules.
+The enclave's identity is pinned to that digest for its lifetime. Pushing a different image to the same enclave later doesn't rebuild it: each enclave is bound to whatever it first built from. To deploy a new version, `create` a fresh enclave and `push` your new image to it.
 
 ## Flags
 
 | Flag | Default | Purpose |
 |------|---------|---------|
-| `--image <ref>` | required | Image reference; see [Image reference grammar](#image-reference-grammar) above. |
 | `--instance-type <small\|medium\|large>` | `small` | Resource tier. |
 | `--container-port <port>` | unset | Plaintext port the container listens on inside the enclave. The proxy forwards decrypted bytes to `127.0.0.1:<port>` once the Noise channel is up. Required if you want the enclave to expose an HTTP service. |
 | `--storage-size-bytes <bytes>` | unset | Size of the persistent encrypted volume in bytes. Omit (or pass `0`) for a stateless enclave. Minimum is 128 MiB (`134217728`); the backend rejects anything smaller. |
+| `--name <name>` | auto-generated | Optional freeform display name (max 64 chars). Shown in the dashboard header and `enclave list`. Omit it to get an `<adjective>-<animal>-<NNN>` name. |
+| `--visibility <private\|public>` | `private` | Registry visibility for anonymous pulls. `public` lets anyone pull the enclave's image without auth, which is what makes `enclavia reproduce` work for non-owners. Owner pulls and pushes are governed by ownership and unaffected. |
 | `--egress-allow <host:port[/proto]>` | unset (deny-all) | Permit one outbound destination. Repeatable. See [Outbound egress allowlist](/egress). |
 | `--egress-resolver <ipv4>` | unset | DNS resolver(s) the in-enclave `unbound` forwards to. Required if any `--egress-allow` is a hostname. Repeatable. |
 | `--egress-config <path>` | unset | Path to a JSON allowlist file. Mutually exclusive with `--egress-allow` / `--egress-resolver`. See [Outbound egress allowlist](/egress#json-schema). |
@@ -58,8 +59,8 @@ If the manifest doesn't exist yet at create time the baseline is empty, and the 
 When `--storage-size-bytes` is set, the backend provisions a LUKS2 volume on top of btrfs and mounts it inside the container at `/data` — that's where your app reads and writes. Pick a size in bytes; for example:
 
 ```bash
-enclavia enclave create --image myapp:v1 --storage-size-bytes 1073741824   # 1 GiB
-enclavia enclave create --image myapp:v1 --storage-size-bytes 134217728    # 128 MiB (minimum)
+enclavia enclave create --storage-size-bytes 1073741824   # 1 GiB
+enclavia enclave create --storage-size-bytes 134217728    # 128 MiB (minimum)
 ```
 
 The volume is encrypted at rest. The LUKS passphrase lives in AWS KMS and is only released to the enclave after its attestation document matches the image's PCRs — so a stolen backing file is useless without the running, attested enclave. See [Push](/push) for why image tags are immutable.
@@ -80,26 +81,29 @@ Lifecycle: `enclave stop` keeps the encrypted volume around so the next start ca
 
 ## Timeout
 
-The backend polls the registry for up to **30 minutes** after `create`. If no fresh push lands in that window the enclave moves to `error` with a `no fresh push detected within 30 minutes` message.
+The backend keeps the enclave in `waiting_for_image` for up to **30 minutes** after `create`. If no push lands in that window the enclave moves to `error` with a `no fresh push detected within 30 minutes` message; you'll need to `create` a new one and push to it.
 
 ## Lifecycle commands
 
 ```bash
 enclavia enclave list                  # all your enclaves
 enclavia enclave status <id>           # detail: status, instance type, image, vsock CID, PCRs
-enclavia enclave stop <id>             # stop a running enclave (terminates the instance)
+enclavia enclave stop <id>             # stop a running enclave (terminates the instance, keeps storage)
+enclavia enclave start <id>            # boot a stopped enclave, re-mounting any provisioned storage
 enclavia enclave destroy <id>          # delete the enclave record (and any provisioned storage)
 ```
 
-`status` will show populated PCRs (`pcr0`, `pcr1`, `pcr2` as hex) once the build completes. Those are the values you'll pin in the client when [connecting](/connect).
+`enclave list` and the other commands accept the same unique-prefix form as `push` (anywhere unambiguous resolves to a single id). `enclave status` and `enclave destroy` are currently stricter: they want the full UUID.
+
+`status` shows populated PCRs (`pcr0`, `pcr1`, `pcr2` as hex) once the build completes. Those are the values you'll pin in the client when [connecting](/connect).
 
 ## Status meanings
 
 | Status | Meaning |
 |--------|---------|
-| `waiting_for_image` | Created and waiting for a fresh `enclavia push` to the bound tag. |
+| `waiting_for_image` | Created and waiting for the first `enclavia push` to the enclave's registry repo. |
 | `building` | The backend is producing the enclave image (EIF) from your Docker image. |
-| `running` | The enclave is up. The proxy URL is `https://<id>.enclaves.beta.enclavia.io`. |
+| `running` | The enclave is up. The proxy URL is `wss://<id>.enclaves.beta.enclavia.io`. |
 | `stopped` | The instance is no longer running. The record (and storage if any) is preserved. |
 | `error` | Something failed; `error_message` in `enclave status` has details. |
 

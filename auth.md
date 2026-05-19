@@ -1,6 +1,6 @@
 # Authenticate
 
-The CLI authenticates by asking the backend to mint a device code and pointing you at the web UI to approve it. There is no password to type into the terminal — the browser session is the source of trust.
+The CLI authenticates with the backend over OAuth 2.1 (PKCE-S256) with a localhost loopback redirect. There is no password to type into the terminal; the browser session is the source of trust.
 
 ## Sign in
 
@@ -8,18 +8,18 @@ The CLI authenticates by asking the backend to mint a device code and pointing y
 enclavia auth login
 ```
 
-The command will print a URL similar to:
+The command starts a tiny one-shot HTTP server on a random localhost port, prints the authorization URL, and tries to open it in your default browser:
 
 ```
-Open this URL in a browser where you're already signed in to Enclavia:
-  https://beta.enclavia.io/devices/approve?code=XXXXXXXX
+Open this URL in your browser to authorize this device:
+  https://api.beta.enclavia.io/oauth/authorize?response_type=code&client_id=enclavia-cli&redirect_uri=http://127.0.0.1:<port>/cb&code_challenge=...&code_challenge_method=S256&state=...
 
-Waiting for approval...
+Waiting for the browser to redirect back...
 ```
 
-Open it in a browser that's already signed in to your Enclavia account. The page asks you to label the new session (a description of which machine or context this CLI is on) and click **Approve**. Once you do, the CLI receives the API token and writes it to `~/.config/enclavia/credentials.json`.
+If the auto-open fails (headless machine, no `xdg-open`, etc.) copy the URL into a browser that's signed in to your Enclavia account. Approve the consent screen and the browser redirects back to the loopback URL, which hands the authorization code to the CLI. The CLI exchanges the code for an access token + refresh token and writes both to `~/.config/enclavia/credentials.json`.
 
-If you don't yet have an Enclavia account, the device-approval URL will redirect you through GitHub or Google sign-in first, then onboarding to choose a handle, then back to approval.
+If you don't yet have an Enclavia account, the consent flow redirects you through GitHub or Google sign-in first, then onboarding to choose a handle, then back to consent.
 
 ## Your handle
 
@@ -33,10 +33,19 @@ enclavia enclave list
 
 ## Re-authenticate
 
-Tokens are long-lived but revocable from the web UI. If a token is revoked or invalidated, any CLI command will print:
+Access tokens are short-lived and the CLI refreshes them silently using the refresh token in `credentials.json`. Sessions are revocable from the web UI; if a session is revoked, the next CLI command will print:
 
 ```
-Error: unauthorized — run `enclavia auth login` to re-authenticate
+Error: unauthorized; run `enclavia auth login` to re-authenticate
 ```
 
 Run `enclavia auth login` again and approve a new session.
+
+### Upgrading from an older CLI
+
+Earlier CLI builds wrote a single-field credentials file (`{"token": "..."}`). The current CLI rejects that shape on startup and reports `unauthorized`. If you see that after upgrading, delete the file and re-authenticate:
+
+```bash
+rm ~/.config/enclavia/credentials.json
+enclavia auth login
+```

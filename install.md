@@ -1,6 +1,6 @@
 # Install the CLI
 
-The `enclavia` CLI is the primary entry point: authenticate, push images, create and manage enclaves. It is distributed as a Nix flake from [`EnclaviaIO/enclavia-crates`](https://github.com/EnclaviaIO/enclavia-crates).
+The `enclavia` CLI is the primary entry point: authenticate, push images, create and manage enclaves. It is distributed as a Nix flake from [`EnclaviaIO/enclavia`](https://github.com/EnclaviaIO/enclavia).
 
 ## Requirements
 
@@ -18,17 +18,17 @@ experimental-features = nix-command flakes
 For a one-off invocation:
 
 ```bash
-nix run github:EnclaviaIO/enclavia-crates#enclavia -- --help
+nix run github:EnclaviaIO/enclavia#enclavia -- --help
 ```
 
-Every subsequent `enclavia ...` example in these docs can be prefixed with `nix run github:EnclaviaIO/enclavia-crates#enclavia --` if you'd rather not install the binary.
+Every subsequent `enclavia ...` example in these docs can be prefixed with `nix run github:EnclaviaIO/enclavia#enclavia --` if you'd rather not install the binary.
 
 ## Install into your profile
 
 To get a persistent `enclavia` on `$PATH`:
 
 ```bash
-nix profile install github:EnclaviaIO/enclavia-crates#enclavia
+nix profile install github:EnclaviaIO/enclavia#enclavia
 ```
 
 To upgrade later:
@@ -43,7 +43,7 @@ nix profile upgrade enclavia
 enclavia --help
 ```
 
-You should see the top-level command list — `auth`, `enclave`, `push`. If that prints, you're done — head to [Authenticate](/auth).
+You should see the top-level command list (`auth`, `enclave`, `push`, `reproduce`). If that prints, you're done; head to [Authenticate](/auth).
 
 ## Backend
 

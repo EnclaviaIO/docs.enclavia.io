@@ -47,7 +47,7 @@ The enclave id can be a unique prefix (same rule as `enclavia push`); a full UUI
 
 ## Pinning your local builder to the recorded revs
 
-PCRs are reproducible only if **all** inputs match — including the `builder` binary itself and the `enclavia-crates` workspace it consumes. The backend records the git revs of both at build time and `enclavia reproduce` prints them as `Recorded revs:`. If your local PCRs diverge, point your local `builder` at those revs before reporting a bug:
+PCRs are reproducible only if **all** inputs match, including the `builder` binary itself and the `enclavia` workspace (the in-enclave crates) it consumes. The backend records the git revs of both at build time and `enclavia reproduce` prints them as `Recorded revs:`. If your local PCRs diverge, point your local `builder` at those revs before reporting a bug:
 
 ```sh
 # In your local checkout of the builder repo

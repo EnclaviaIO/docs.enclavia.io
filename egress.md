@@ -38,10 +38,11 @@ The practical consequence: **what the auditor sees in `enclavia reproduce` is wh
 
 ```bash
 enclavia enclave create \
-  --image myapp:v1 \
   --egress-allow api.openai.com:443 \
   --egress-resolver 1.1.1.1
 ```
+
+(The build kicks off only when you `enclavia push` your image to the enclave; see [Create](/create) for the full create-then-push flow.)
 
 | Flag | Form | Notes |
 |------|------|-------|
@@ -54,12 +55,12 @@ Three worked examples:
 ```bash
 # Hostname target. Needs a resolver because the daemon has to learn
 # api.openai.com's A records at connect time.
-enclavia enclave create --image myapp:v1 \
+enclavia enclave create \
   --egress-allow api.openai.com:443 \
   --egress-resolver 1.1.1.1
 
 # CIDR target. No resolver needed (the daemon is matching IP literals).
-enclavia enclave create --image myapp:v1 \
+enclavia enclave create \
   --egress-allow 10.0.0.0/8:443
 ```
 
@@ -92,7 +93,7 @@ Validation rules (enforced identically by the CLI, the backend, and the in-encla
 | IPv6 | Rejected at every layer; there's no v6 path through the daemon. |
 
 ```bash
-enclavia enclave create --image myapp:v1 --egress-config ./egress.json
+enclavia enclave create --egress-config ./egress.json
 ```
 
 The CLI rejects mixing `--egress-config` with `--egress-allow` / `--egress-resolver` so there's no ambiguity about which document gets baked into the EIF.
@@ -104,8 +105,8 @@ The same shape is exposed on the REST API. `POST /enclaves` accepts an optional 
 ```jsonc
 POST /enclaves
 {
-  "image": "myapp:v1",
   "instance_type": "small",
+  "container_port": 8080,
   "egress_allowlist": {
     "version": 1,
     "resolvers": ["1.1.1.1"],
@@ -138,7 +139,7 @@ This is the auditor's verification surface. If you want to claim "this enclave o
 ### Only `api.openai.com`
 
 ```bash
-enclavia enclave create --image myapp:v1 \
+enclavia enclave create \
   --egress-allow api.openai.com:443 \
   --egress-resolver 1.1.1.1
 ```
@@ -146,7 +147,7 @@ enclavia enclave create --image myapp:v1 \
 ### A customer VPN CIDR
 
 ```bash
-enclavia enclave create --image myapp:v1 \
+enclavia enclave create \
   --egress-allow 10.99.0.0/16:443
 ```
 
@@ -167,12 +168,12 @@ cat > egress.json <<'EOF'
 }
 EOF
 
-enclavia enclave create --image myapp:v1 --egress-config ./egress.json
+enclavia enclave create --egress-config ./egress.json
 ```
 
 ### Try it locally
 
-The [`enclavia-samples/egress`](https://github.com/EnclaviaIO/enclavia-samples/tree/main/egress) sample exercises the full path end-to-end: a tiny Python service that does an outbound HTTPS request and reports the result. A permitted destination returns a real response; a non-permitted destination fails at the in-enclave filter, before any packet leaves the host. Useful as a smoke test for a fresh allowlist.
+A worked, end-to-end sample exercising the full egress path (a tiny Python service that does an outbound HTTPS request through the allowlist and reports the result) lands alongside the public beta in a separate `enclavia-samples` repository. Until then, the recipes above are the minimum you need to wire up egress against your own image.
 
 ## Limitations
 

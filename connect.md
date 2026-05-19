@@ -1,6 +1,6 @@
 # Connect from a client
 
-Each running enclave is reachable at `https://<id>.enclaves.beta.enclavia.io` — that URL is the WebSocket-based proxy that bridges your client to the enclave's vsock channel. The client speaks Noise+CBOR directly to the in-enclave responder; the proxy is protocol-agnostic and never sees plaintext.
+Each running enclave is reachable at `wss://<id>.enclaves.beta.enclavia.io`, the WebSocket-based proxy that bridges your client to the enclave's vsock channel. The client speaks Noise+CBOR directly to the in-enclave responder; the proxy is protocol-agnostic and never sees plaintext.
 
 The reference client is the Rust `enclavia` crate from this workspace. It runs natively (Tokio) and is structured so it can also target WebAssembly.
 
@@ -9,7 +9,7 @@ The reference client is the Rust `enclavia` crate from this workspace. It runs n
 ```toml
 # Cargo.toml
 [dependencies]
-enclavia = { git = "https://github.com/EnclaviaIO/enclavia-crates" }
+enclavia = { git = "https://github.com/EnclaviaIO/enclavia" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 

@@ -1,56 +1,51 @@
 # Push an image
 
-Enclavia runs your enclave from a Docker image hosted in your private registry namespace. `enclavia push` is a thin wrapper around `docker tag` + `docker push` that handles registry login and namespacing for you.
+Enclavia runs each enclave from a Docker image hosted in a dedicated private repo at `registry.beta.enclavia.io/<your-handle>/<enclave-uuid>`. `enclavia push` is a thin wrapper around `docker tag` + `docker push` that handles registry login and the per-enclave namespacing for you.
 
 ## Prerequisites
 
-- You're [authenticated](/auth) — `enclavia enclave list` returns without error.
-- You've [created an enclave](/create) that's waiting on the destination tag you're about to push to. Every tag in your namespace is bound to a specific enclave; pushing without a waiting enclave doesn't trigger a build.
+- You're [authenticated](/auth); `enclavia enclave list` returns without error.
+- You've [created an enclave](/create) and have its id (printed by `enclave create` and visible in `enclave list`).
 - Docker is running and can see the image you want to push.
 
 ## Push a local image
 
-The command takes two positional arguments — the local image and the destination in your registry namespace:
+The command takes two positional arguments: the local image to upload, and the id of the enclave you want to bind it to.
 
 ```bash
-enclavia push <local-image> <destination>
+enclavia push <local-image> <enclave-id>
 ```
 
-For example, given a local image tagged `myapp:dev`:
+For example, given a local image tagged `myapp:dev` and an enclave whose id starts with `1d2c3b4a`:
 
 ```bash
-enclavia push myapp:dev myapp:v1
+enclavia push myapp:dev 1d2c3b4a
 ```
 
 This:
 
-1. Asks the backend for your registry endpoint and a short-lived bearer token.
-2. Logs Docker into `registry.beta.enclavia.io` with that token.
-3. Tags `myapp:dev` as `registry.beta.enclavia.io/<handle>/myapp:v1` — the CLI automatically prepends the registry host and your handle, you only ever type `<repo>:<tag>`.
-4. Pushes the result.
-5. Prints the manifest digest (`sha256:...`) the registry recorded — the content-addressed identifier the backend will pin enclaves to.
-6. Notifies the backend that the push happened, so the enclave you've already created against this tag starts building immediately (the backend also polls the registry every 15 seconds as a fallback).
+1. Resolves `1d2c3b4a` against your enclaves; if it doesn't match exactly one of yours, the push fails before any I/O. Pass a full UUID if the prefix is ambiguous.
+2. Asks the backend for your registry endpoint and a short-lived bearer token.
+3. Logs Docker into `registry.beta.enclavia.io` with that token.
+4. Tags `myapp:dev` as `registry.beta.enclavia.io/<handle>/<enclave-uuid>:latest` and pushes it.
+5. Prints the manifest digest (`sha256:...`) the registry recorded; that's the content-addressed identifier the backend will pin the enclave to.
+6. Notifies the backend that the push happened, so the waiting enclave starts building immediately. The backend also polls the registry as a fallback in case the notify is lost.
 
-The notify step uses the *push event itself* as the trigger, not just a manifest-digest change. That matters when you re-push an image whose layers the registry already cached — the registry returns the same digest, but the waiting enclave still picks up the push and starts its build.
+The notify step uses the *push event itself* as the trigger, not just a manifest-digest change. That matters when you re-push an image whose layers the registry already cached: the registry returns the same digest, but the waiting enclave still picks up the push and starts its build.
 
-## Destination grammar
+## Enclave id grammar
 
-The destination accepts two forms:
+The second argument is the enclave id printed by `enclave create`, or any unique prefix that resolves to exactly one of your enclaves. A full UUID always works. The CLI never asks you to type the registry path or your handle; both are derived from the enclave id.
 
-- `<repo>[:<tag>]` — owner defaults to your handle. `myapp:v1`, `myapp` (tag defaults to `latest`).
-- `<owner>/<repo>[:<tag>]` — owner **must** equal your handle. The form exists so the references you type and the references the backend stores look identical.
+## One image per enclave
 
-`<repo>` uses the same character class as a handle. Tags follow Docker's grammar: `[A-Za-z0-9_.-]`, max 128 characters, no leading `.` or `-`.
-
-## Tag immutability
-
-From your perspective each `<owner>/<repo>:<tag>` is **immutable**. An enclave is bound at creation time to the image it was built from; the attestation document covers the contents of that image. To deploy a new version, create a new enclave bound to a new tag, then push your image to that tag. Pushing the same tag twice is allowed by the registry but will not affect any already-running enclave.
+Each enclave is bound at build time to the digest of whatever you first push to its repo. You cannot redirect a built enclave at a new image; pushing again to the same repo produces a new digest in the registry but doesn't touch the running enclave. To deploy a new version, [create a fresh enclave](/create) and push to it.
 
 ## Pushing from CI
 
 `enclavia push` shells out to `docker login` against the bearer-token endpoint of the registry; nothing CI-specific is required beyond:
 
-- The `enclavia` binary on the runner (install via Nix, or `nix run github:EnclaviaIO/enclavia-crates#enclavia --`).
+- The `enclavia` binary on the runner (install via Nix, or `nix run github:EnclaviaIO/enclavia#enclavia --`).
 - A pre-approved API token (run `enclavia auth login` from a developer machine, copy `~/.config/enclavia/credentials.json` into the CI's secret store, restore it before invoking `enclavia push`).
 - Docker available to the CI job.
 

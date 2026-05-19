@@ -140,13 +140,13 @@ export default defineConfig({
     nav: [
       { text: 'Get started', link: '/install' },
       { text: 'enclavia.io', link: 'https://enclavia.io' },
-      { text: 'GitHub', link: 'https://github.com/EnclaviaIO/enclavia-crates' },
+      { text: 'GitHub', link: 'https://github.com/EnclaviaIO/enclavia' },
     ],
 
     sidebar,
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/EnclaviaIO/enclavia-crates' },
+      { icon: 'github', link: 'https://github.com/EnclaviaIO/enclavia' },
     ],
 
     search: {
