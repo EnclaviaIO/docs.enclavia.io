@@ -1,5 +1,15 @@
 # Connect from a client
 
+There are two ways to talk to a running enclave, and the right one depends on who you trust to verify the attestation.
+
+**Embed the SDK in your client** (this page). Your code opens a WebSocket directly to `wss://<id>.enclaves.beta.enclavia.io`, performs the Noise handshake itself, fetches the attestation document, validates the AWS Nitro signing chain, and pins the PCRs. **You are the verifier.** No third party can hand you tampered bytes without your client detecting it. Use this path when the client is yours to ship: a Rust binary, a wallet that compiles in the SDK, eventually a WASM build in the browser.
+
+**Go through the HTTPS proxy at `https://<id>.enclaves.beta.enclavia.io/proxy/...`**. The proxy (we operate one on `*.enclaves.beta.enclavia.io`, or you can [self-host one](/self-host-proxy)) does the attestation verification on every request and tunnels plain HTTP/WebSocket to the enclave's workload. **The proxy operator is the verifier.** Use this path when you can't embed the SDK: an unmodified browser hitting a public URL, a curl pipeline, a client written in a language without a native enclavia SDK. PCR values are surfaced on every response as `X-Enclavia-PCR0..2` headers so a curious client can still check them out-of-band, but transport security between client and enclave reduces to "trust the proxy". See [Hosted HTTPS proxy](/proxy) for the user-side reference and [Self-host the proxy](/self-host-proxy) if you want to be the proxy operator yourself.
+
+The rest of this page covers the embed-the-SDK path.
+
+## SDK overview
+
 Each running enclave is reachable at `wss://<id>.enclaves.beta.enclavia.io`, the WebSocket-based proxy that bridges your client to the enclave's vsock channel. The client speaks Noise+CBOR directly to the in-enclave responder; the proxy is protocol-agnostic and never sees plaintext.
 
 The reference client is the Rust `enclavia` crate from this workspace. It runs natively (Tokio) and is structured so it can also target WebAssembly.

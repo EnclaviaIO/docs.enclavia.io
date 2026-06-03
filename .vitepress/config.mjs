@@ -109,6 +109,8 @@ const sidebar = [
     text: 'Networking',
     items: [
       { text: 'Outbound egress allowlist', link: '/egress' },
+      { text: 'Hosted HTTPS proxy', link: '/proxy' },
+      { text: 'Self-host the proxy', link: '/self-host-proxy' },
     ],
   },
   {
