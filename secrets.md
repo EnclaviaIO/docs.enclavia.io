@@ -2,7 +2,16 @@
 
 Enclavia lets you attach small, named environment-variable secrets to an enclave. The backend stores them encrypted at rest (AES-256-GCM, per-row nonce), the values never appear in any API response, and they only ever leave the backend over an authenticated single-shot vsock channel into the enclave at boot. Inside the enclave they land in the workload's `process.env` before the container's entrypoint runs. Plaintext is never written to disk inside the EIF and never logged.
 
-The trade-offs are explicit:
+## Why use them
+
+Anything sensitive your workload needs (database URLs, API keys, signing keys, OAuth client secrets) is a problem if you bake it into the Docker image. The image is publishable: anyone who can pull it from the registry can extract baked-in values. And the image's content hash measures into PCR0, so a particular value gets pinned to a particular build. That's the wrong direction for two reasons:
+
+1. **Reproducibility.** The whole point of attested enclaves is that someone else can rebuild the same image from source and confirm the PCRs match. Hardcoded per-deployment values mean nobody but you can produce a build that matches your enclave's PCRs.
+2. **Rotation without breaking attestation.** Clients pin against specific PCRs at connect time. Changing a hardcoded value means a new image, new PCRs, and every client has to re-pin. Secrets are injected at boot and never measured into PCRs, so rotating one is an enclave restart, not a rebuild, and pins stay valid.
+
+The same image can be deployed to two enclaves with different secrets without changing PCRs. Configuration that varies per environment (staging vs production database URLs, per-customer API keys) belongs in secrets, not in the image.
+
+## Trade-offs
 
 - **Changes take effect on the next start.** A `set`, rotate, or delete is recorded in the backend immediately, but the running enclave keeps seeing the previous values until you restart it (or it stops and starts again on its own).
 - **No per-secret access policy.** Anyone who owns the enclave can rotate or delete any of its secrets. There are no per-secret IAM grants, no audit log of reads (there are no reads).
