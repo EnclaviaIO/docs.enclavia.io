@@ -114,6 +114,12 @@ const sidebar = [
     ],
   },
   {
+    text: 'Configuration',
+    items: [
+      { text: 'Per-enclave secrets', link: '/secrets' },
+    ],
+  },
+  {
     text: 'Examples',
     items: [
       { text: 'Sample apps', link: '/samples' },
