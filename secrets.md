@@ -4,12 +4,12 @@ Enclavia lets you attach small, named environment-variable secrets to an enclave
 
 ## Why use them
 
-Anything sensitive your workload needs (database URLs, API keys, signing keys, OAuth client secrets) is a problem if you bake it into the Docker image. The image is publishable: anyone who can pull it from the registry can extract baked-in values. And the image's content hash measures into PCR0, so a particular value gets pinned to a particular build. That's the wrong direction for two reasons:
+Anything sensitive your workload needs (database URLs, API keys, signing keys, OAuth client secrets) is a problem if you bake it into the Docker image. The image is publishable: anyone who can pull it from the registry can extract baked-in values. Even non-sensitive per-deployment configuration (staging vs production endpoints, per-customer keys) is awkward to hardcode, because every change becomes a new image build with a new content hash.
 
-1. **Reproducibility.** The whole point of attested enclaves is that someone else can rebuild the same image from source and confirm the PCRs match. Hardcoded per-deployment values mean nobody but you can produce a build that matches your enclave's PCRs.
-2. **Rotation without breaking attestation.** Clients pin against specific PCRs at connect time. Changing a hardcoded value means a new image, new PCRs, and every client has to re-pin. Secrets are injected at boot and never measured into PCRs, so rotating one is an enclave restart, not a rebuild, and pins stay valid.
+Secrets are injected at boot through the in-enclave init path, never written into the image, and never measured into PCRs. That gives you two things:
 
-The same image can be deployed to two enclaves with different secrets without changing PCRs. Configuration that varies per environment (staging vs production database URLs, per-customer API keys) belongs in secrets, not in the image.
+1. **Sensitive material stays out of the registry.** API keys, signing keys, database URLs are never visible to anyone who can pull the image, because they aren't there.
+2. **You can reconfigure without rebuilding.** Rotating, adding, or removing a secret is an enclave restart. The EIF is unchanged, so the PCRs are unchanged, so any client pinned to this enclave's PCRs keeps working through the rotation. (PCRs are always per-enclave, by design: the enclave's UUID is stamped into the rootfs at build time, so even two enclaves built from the same image have different PCR2 values. See [Connect from a client](/connect#get-the-pcrs-you-need-to-pin).)
 
 ## Trade-offs
 
