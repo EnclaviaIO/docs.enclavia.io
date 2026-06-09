@@ -126,6 +126,12 @@ const sidebar = [
     ],
   },
   {
+    text: 'Upgrades',
+    items: [
+      { text: 'Staged deployments', link: '/upgrades' },
+    ],
+  },
+  {
     text: 'Verify',
     items: [
       { text: 'Reproduce a build', link: '/reproduce' },

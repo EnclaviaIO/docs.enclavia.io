@@ -39,7 +39,7 @@ This reserves a `small` enclave with a 256 MiB encrypted volume, declares that t
 
 Each enclave owns its own registry repo at `<your-handle>/<enclave-uuid>`. `create` provisions that repo; the first successful push to it is what flips the enclave from `waiting_for_image` to `building`, and the digest the registry assigns becomes the enclave's pinned image (`docker_image` becomes `<host>/<owner>/<enclave-uuid>@sha256:...`).
 
-The enclave's identity is pinned to that digest for its lifetime. Pushing a different image to the same enclave later doesn't rebuild it: each enclave is bound to whatever it first built from. To deploy a new version, `create` a fresh enclave and `push` your new image to it.
+For non-upgradable enclaves (the default), the enclave's identity is pinned to that digest for its lifetime. Pushing a different image later is rejected. To deploy a new version, `create` a fresh enclave and `push` your new image to it. For upgradable enclaves, subsequent pushes are staged and require an explicit confirm step before any version swap occurs. See [Staged deployments](/upgrades).
 
 ## Flags
 
@@ -53,6 +53,7 @@ The enclave's identity is pinned to that digest for its lifetime. Pushing a diff
 | `--egress-allow <host:port[/proto]>` | unset (deny-all) | Permit one outbound destination. Repeatable. See [Outbound egress allowlist](/egress). |
 | `--egress-resolver <ipv4>` | unset | DNS resolver(s) the in-enclave `unbound` forwards to. Required if any `--egress-allow` is a hostname. Repeatable. |
 | `--egress-config <path>` | unset | Path to a JSON allowlist file. Mutually exclusive with `--egress-allow` / `--egress-resolver`. See [Outbound egress allowlist](/egress#json-schema). |
+| `--upgradable` | off | Mark the enclave as upgradable. Future pushes are staged rather than rejected. Immutable post-create. See [Staged deployments](/upgrades). |
 
 ### Persistent storage
 
