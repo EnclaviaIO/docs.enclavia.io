@@ -37,9 +37,28 @@ The notify step uses the *push event itself* as the trigger, not just a manifest
 
 The second argument is the enclave id printed by `enclave create`, or any unique prefix that resolves to exactly one of your enclaves. A full UUID always works. The CLI never asks you to type the registry path or your handle; both are derived from the enclave id.
 
-## One image per enclave
+## One image per enclave (non-upgradable)
 
-Each enclave is bound at build time to the digest of whatever you first push to its repo. You cannot redirect a built enclave at a new image; pushing again to the same repo produces a new digest in the registry but doesn't touch the running enclave. To deploy a new version, [create a fresh enclave](/create) and push to it.
+By default an enclave is **non-upgradable**: it is bound at build time to the digest of whatever you first push to its repo. Pushing again to the same repo produces a new digest in the registry but is rejected with an error:
+
+```
+Error: this enclave is non-upgradable, create a new one
+```
+
+To deploy a new version, [create a fresh enclave](/create) and push to it.
+
+## Staged deployments (upgradable enclaves)
+
+If the enclave was created with `--upgradable`, a second push does not deploy. Instead it stages the new image: the EIF is built but the running enclave is left untouched until you explicitly confirm the upgrade.
+
+```bash
+enclavia push myapp:v2 1d2c3b4a
+# ...
+# Staged upgrade a3b4c5d6-... for enclave 1d2c3b4a-...
+# Confirm with: enclavia upgrade confirm 1d2c3b4a a3b4c5d6
+```
+
+From there you can review the staged upgrade, schedule when it should fire, or revoke it before it takes effect. See [Staged deployments and the upgrade chain](/upgrades) for the full workflow.
 
 ## Pushing from CI
 
