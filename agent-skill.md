@@ -3,7 +3,7 @@
 There are two ways to let an AI agent manage your enclaves, and they trade off in opposite directions:
 
 1. **The hosted [MCP server](/mcp)** at `mcp.beta.enclavia.io`. Zero local setup, OAuth in the client, a per-request bearer token. Best for agents that run in someone else's runtime (Claude on the web, ChatGPT) and have no shell of their own.
-2. **The `enclavia` CLI with `--json` plus the agent skill** (this page). The agent runs the `enclavia` binary locally and reads a short skill file that teaches it the command surface. It needs a shell and a seeded credentials file, but it is more token-efficient than the MCP server for the same operations (one CLI call returns one JSON value, instead of an MCP tool round-trip), and it exposes the full CLI including `push`, `secret`, `upgrade`, and `reproduce`, which the MCP server intentionally does not.
+2. **The `enclavia` CLI with `--json` plus the agent skill** (this page). The agent runs the `enclavia` binary locally and reads a short skill file that teaches it the command surface. It needs a shell and a seeded credentials file, but it is more token-efficient than the MCP server for the same operations (one CLI call returns one JSON value, instead of an MCP tool round-trip), and it exposes the local-tool commands the hosted MCP server cannot offer: `push` (needs local Docker), `reproduce` (needs the local builder and Nix), and `secret` management. The MCP server conversely offers `enclave logs`, which the CLI has no command for; both cover the enclave lifecycle and `upgrade`.
 
 If your agent already has a terminal, prefer this path. If it does not, use the MCP server.
 
@@ -85,9 +85,9 @@ To target a non-production backend, set `ENCLAVIA_BACKEND_URL` (default `https:/
 | **Auth** | Per-request bearer token, OAuth in the client | Human-seeded `credentials.json`, auto-refreshed |
 | **Best for** | Hosted agents with no shell (Claude web, ChatGPT) | Local agents that already have a terminal |
 | **Token overhead** | Higher (MCP tool round-trips) | Lower (one CLI call, one JSON value) |
-| **Surface** | `list`, `status`, `logs`, `create`, `start`, `stop`, `destroy` | The full CLI, including `push`, `secret`, `upgrade`, `reproduce` |
+| **Surface** | Enclave lifecycle (`create`/`list`/`status`/`start`/`stop`/`destroy`), `logs`, and `upgrade` | Enclave lifecycle (plus `restart`) and `upgrade`, plus `push`, `secret`, and `reproduce`; no `logs` command |
 
-In short: reach for the **MCP server** when you want a hosted connector with no local setup, and for the **CLI + skill** when your agent already has a shell and you want the lower token overhead and the full command surface.
+In short: reach for the **MCP server** when you want a hosted connector with no local setup, and for the **CLI + skill** when your agent already has a shell and you want the lower token overhead plus the local-tool commands (`push`, `reproduce`, `secret`).
 
 ## See also
 
