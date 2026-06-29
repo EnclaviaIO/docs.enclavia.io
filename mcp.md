@@ -2,6 +2,8 @@
 
 Enclavia ships a [Model Context Protocol](https://modelcontextprotocol.io) server so you can manage your enclaves from any MCP-aware AI client — Claude, ChatGPT, Cursor, the OpenAI Codex CLI, or anything else that speaks the spec — using natural language. It's the same surface as the CLI (list enclaves, inspect status and logs, create, stop, destroy), exposed as MCP tools and authenticated against your Enclavia account.
 
+The MCP server is one of two ways to give an agent access. If your agent already runs in a terminal, the [CLI with `--json` plus the agent skill](/agent-skill) is more token-efficient and exposes the full command surface (including `push`, `secret`, `upgrade`, and `reproduce`). Reach for the hosted MCP server when you want zero local setup; reach for the CLI skill when the agent has a shell.
+
 The hosted endpoint for the public beta is:
 
 ```
@@ -118,3 +120,7 @@ You can authorize one without the other. Common patterns: drive the management s
 
 - `enclavia push` is **not** exposed as an MCP tool. Pushing requires a Docker daemon and a local image, both of which live on your machine, not in the MCP server. Ask the agent to create the enclave first (it reserves a private repo for it in your namespace); then push to that enclave's id from the CLI to trigger the build.
 - The MCP server doesn't proxy traffic into running enclaves. To talk to an enclave's HTTP service you still use the [`enclavia` client library](/connect).
+
+## See also
+
+- [Drive enclavia from a local AI agent (CLI skill)](/agent-skill) — the lower-overhead alternative for agents that have a shell, with the full CLI surface.
