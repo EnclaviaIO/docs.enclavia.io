@@ -103,6 +103,7 @@ const sidebar = [
       { text: 'Push an image', link: '/push' },
       { text: 'Connect from a client', link: '/connect' },
       { text: 'Connect an AI agent (MCP)', link: '/mcp' },
+      { text: 'Drive a local agent (CLI skill)', link: '/agent-skill' },
     ],
   },
   {
