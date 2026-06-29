@@ -18,12 +18,14 @@ features:
     details: '`enclavia enclave create` reserves an enclave and a dedicated private repo for it in your registry namespace. `enclavia push` uploads your image into that repo, which triggers the build and boots the enclave inside AWS Nitro.'
   - title: Attested by default
     details: Every connection performs a Noise NN handshake, requests an attestation document, and verifies PCR0/1/2 against the image you pushed. No remote agent, no extra steps.
+  - title: Reproducible builds
+    details: '`enclavia reproduce` rebuilds the enclave image from the exact recorded sources and compares the PCRs to the deployed enclave, so anyone can verify the running code matches what was pushed, not just trust the attestation. Provable, end to end.'
   - title: Encrypted from the browser
     details: The included WASM-friendly client speaks the Noise channel directly to the enclave over a WebSocket proxy. The plaintext never leaves the user's device or the enclave.
   - title: Storage sealed to your enclave
     details: Optional persistent volumes are LUKS-encrypted with a passphrase held in AWS KMS. The key is only released after attestation matches your image's PCRs, so the data is bound to the same identity as the code that wrote it.
   - title: Drive it from your AI agent
-    details: A hosted MCP server lets you manage enclaves from Claude, ChatGPT, Cursor, the OpenAI Codex CLI, or any other MCP-aware client in natural language. Same OAuth identity as the CLI, scoped per user, revocable from the dashboard.
+    details: Two ways to let an agent manage your enclaves in natural language. A hosted MCP server for any MCP-aware client (Claude, ChatGPT, Cursor, the OpenAI Codex CLI), or the CLI plus an agent skill for local agents that already have a shell, which is more token-efficient. Both use the same OAuth identity as the CLI, scoped per user and revocable from the dashboard.
 ---
 
 ## What is Enclavia
