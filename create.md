@@ -54,6 +54,7 @@ For non-upgradable enclaves (the default), the enclave's identity is pinned to t
 | `--egress-resolver <ipv4>` | unset | DNS resolver(s) the in-enclave `unbound` forwards to. Required if any `--egress-allow` is a hostname. Repeatable. |
 | `--egress-config <path>` | unset | Path to a JSON allowlist file. Mutually exclusive with `--egress-allow` / `--egress-resolver`. See [Outbound egress allowlist](/egress#json-schema). |
 | `--upgradable` | off | Mark the enclave as upgradable. Future pushes are staged rather than rejected. Immutable post-create. See [Staged deployments](/upgrades). |
+| `--control-key <name>` | unset (managed) | Use self-hosted control-key custody: register the named local key (from `enclavia key generate --yubikey`) as this enclave's control key, so only your hardware can authorize upgrades. Implies `--upgradable`. Immutable post-create. See [Control-key custody](/custody). |
 
 ### Persistent storage
 

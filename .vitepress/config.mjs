@@ -130,6 +130,7 @@ const sidebar = [
     text: 'Upgrades',
     items: [
       { text: 'Staged deployments', link: '/upgrades' },
+      { text: 'Control-key custody', link: '/custody' },
     ],
   },
   {
