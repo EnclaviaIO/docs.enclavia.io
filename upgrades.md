@@ -18,7 +18,7 @@ The choice is permanent for the enclave's lifetime. Existing enclaves created be
 
 **Upgradable enclaves** get an ECDSA P-256 control keypair. The public key is baked into every EIF built for the enclave, so the running version can verify that any upgrade or revocation command came from an authorized source. Who holds the private key depends on the enclave's custody mode:
 
-- **Managed (default):** the private key stays in the backend, encrypted at rest under the same master key as [per-enclave secrets](/secrets). The backend signs confirm and revoke commands itself, and you approve them from the web dashboard.
+- **Managed (default):** the private key stays in the backend, encrypted at rest. The backend signs confirm and revoke commands itself, and you approve them from the web dashboard.
 - **Self-hosted:** you hold the private key on a YubiKey, the backend stores only the public half, and confirm and revoke are authorized by a signature from your hardware via the CLI.
 
 The rest of this page describes the managed flow. For the self-hosted flow (including how to generate a key, create a self-hosted enclave, and the two-phase CLI confirm), see [Control-key custody](/custody).

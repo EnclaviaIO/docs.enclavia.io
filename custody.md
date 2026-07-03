@@ -6,7 +6,7 @@ There are two modes, chosen once at create time and immutable for the enclave's 
 
 ## The two modes
 
-**Managed (default).** The backend generates the keypair and keeps the private scalar encrypted at rest (AES-256-GCM, under the same master key as [per-enclave secrets](/secrets)). When you confirm or revoke an upgrade, the backend decrypts the scalar and signs the command itself. You approve upgrades with one click from the web dashboard. This is the zero-setup path: nothing to install, no hardware, no key to lose.
+**Managed (default).** The backend generates the keypair and keeps the private half encrypted at rest. When you confirm or revoke an upgrade, the backend decrypts the scalar and signs the command itself. You approve upgrades with one click from the web dashboard. This is the zero-setup path: nothing to install, no hardware, no key to lose.
 
 **Self-hosted (YubiKey).** You generate the key on a YubiKey (PIV slot, on-device, non-extractable). The backend only ever stores the public key. It has no way to sign anything, so upgrades and revocations can only be authorized by a signature produced on your hardware, from a machine you control. The dashboard shows copyable CLI commands instead of action buttons, because the backend cannot perform the action for you.
 
