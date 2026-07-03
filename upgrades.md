@@ -16,7 +16,12 @@ enclavia enclave create
 
 The choice is permanent for the enclave's lifetime. Existing enclaves created before this feature shipped are non-upgradable.
 
-**Upgradable enclaves** get an ECDSA P-256 control keypair. The public key is baked into every EIF built for the enclave, so the running version can verify that any upgrade or revocation command came from an authorized source. The private key stays in the backend, encrypted at rest under the same master key as [per-enclave secrets](/secrets).
+**Upgradable enclaves** get an ECDSA P-256 control keypair. The public key is baked into every EIF built for the enclave, so the running version can verify that any upgrade or revocation command came from an authorized source. Who holds the private key depends on the enclave's custody mode:
+
+- **Managed (default):** the private key stays in the backend, encrypted at rest under the same master key as [per-enclave secrets](/secrets). The backend signs confirm and revoke commands itself, and you approve them from the web dashboard.
+- **Self-hosted:** you hold the private key on a YubiKey, the backend stores only the public half, and confirm and revoke are authorized by a signature from your hardware via the CLI.
+
+The rest of this page describes the managed flow. For the self-hosted flow (including how to generate a key, create a self-hosted enclave, and the two-phase CLI confirm), see [Control-key custody](/custody).
 
 **Non-upgradable enclaves** have no control keypair and no signed-upgrade path. Pushing a second time to a non-upgradable enclave produces an error:
 
@@ -97,7 +102,7 @@ Upgrade a3b4c5d6-... confirmed.
   The enclave will swap to the new version automatically at that time.
 ```
 
-What happens at confirm time:
+What happens at confirm time (managed custody):
 
 1. The backend constructs an upgrade-auth payload (`from_pcrs`, `to_pcrs`, `image_digest`, `valid_from`) and signs it with the enclave's control private key.
 2. The signed command is dispatched to the running enclave over the Noise channel. The enclave verifies the signature against its baked-in control public key.
@@ -105,6 +110,8 @@ What happens at confirm time:
 4. At `valid_from` the launcher tears down the old version and boots the new EIF. On its first heartbeat the new enclave produces a **boot attestation**, recorded as a `boot` entry in the chain.
 
 A successful upgrade therefore produces two chain entries: the old enclave's `upgrade` link at confirm time, and the new enclave's `boot` link at cutover.
+
+On a **self-hosted** enclave the same `enclavia upgrade confirm` command runs a two-phase flow instead: the CLI fetches the exact payload plus a live nonce from the backend, signs it on your YubiKey (expect a PIN prompt and two touches), and submits the signed command. Everything downstream (dispatch, verification, chain link, cutover) is identical. See [Control-key custody](/custody#upgrading-a-self-hosted-enclave).
 
 ## Revoking an upgrade
 
@@ -122,7 +129,9 @@ Upgrade a3b4c5d6-... revoked.
   The upgrade has been cancelled; the enclave keeps running the current version.
 ```
 
-The backend signs a revocation command and dispatches it to the running enclave. The enclave acknowledges and emits a **revocation attestation**, recorded as a `revocation` entry in the chain. The scheduled cutover is cancelled and the running version continues uninterrupted.
+On a managed enclave the backend signs a revocation command and dispatches it to the running enclave. The enclave acknowledges and emits a **revocation attestation**, recorded as a `revocation` entry in the chain. The scheduled cutover is cancelled and the running version continues uninterrupted.
+
+On a self-hosted enclave, `enclavia upgrade revoke` signs the revocation on your YubiKey through the same two-phase flow as confirm. See [Control-key custody](/custody).
 
 ## Storage-enabled enclaves
 
