@@ -1,6 +1,6 @@
 # Per-enclave secrets
 
-Enclavia lets you attach small, named environment-variable secrets to an enclave. The backend stores them encrypted at rest (AES-256-GCM, per-row nonce), the values never appear in any API response, and they only ever leave the backend over an authenticated single-shot vsock channel into the enclave at boot. Inside the enclave they land in the workload's `process.env` before the container's entrypoint runs. Plaintext is never written to disk inside the EIF and never logged.
+Enclavia lets you attach small, named environment-variable secrets to an enclave. The backend stores them encrypted at rest, the values never appear in any API response, and they only ever leave the backend over an authenticated single-shot vsock channel into the enclave at boot. Inside the enclave they land in the workload's `process.env` before the container's entrypoint runs. Plaintext is never written to disk inside the EIF and never logged.
 
 ## Why use them
 
@@ -141,13 +141,13 @@ There is no in-band signal to the running workload that secrets are stale. If yo
 
 A short note for users who want to know what they are trusting.
 
-Each secret value is encrypted in the backend under a single 32-byte master key (`SECRETS_MASTER_KEY`) using AES-256-GCM, with a freshly generated 12-byte nonce per row. Both the nonce and the ciphertext are persisted; the plaintext is dropped from memory as soon as the row is written.
+Each secret value is encrypted at rest in the backend with an authenticated cipher; only ciphertext is persisted, and the plaintext is dropped from memory as soon as the row is written.
 
 At enclave start the backend:
 
 1. Reads the current rows for that enclave, decrypts them in memory, and serializes the result as a CBOR `map<string, bytes>` keyed by secret name.
-2. Hands the serialized payload to a host-side single-shot daemon (`secrets-host`) that listens on a per-enclave vsock port.
-3. The in-enclave init binary (`enclavia-secrets-init`) opens that vsock port, reads the CBOR map, and writes each entry into the OCI bundle's `process.env` before `crun start` runs.
+2. Hands the serialized payload to a host-side single-shot daemon that serves it on a per-enclave vsock port.
+3. The in-enclave init binary (`enclavia-secrets-init`) opens that vsock port, reads the CBOR map, and writes each entry into the OCI bundle's `process.env` before the container starts.
 
 Plaintext is never written to a file inside the EIF, never copied into an env-file on disk, and never appears in container logs. The vsock channel is single-shot: once the in-enclave init has read the payload, the host daemon exits.
 
