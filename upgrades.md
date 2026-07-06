@@ -93,6 +93,8 @@ enclavia upgrade confirm 1d2c3b4a a3b4c5d6 --at 2026-07-08T12:00:00Z
 enclavia upgrade confirm 1d2c3b4a a3b4c5d6 --immediate
 ```
 
+If the enclave was created with a [minimum upgrade delay](#minimum-upgrade-delay), `--immediate` (and any `--at` earlier than now plus the delay) is rejected: first by the backend with a clear error, and authoritatively by the running enclave itself.
+
 Successful output:
 
 ```
@@ -112,6 +114,27 @@ What happens at confirm time (managed custody):
 A successful upgrade therefore produces two chain entries: the old enclave's `upgrade` link at confirm time, and the new enclave's `boot` link at cutover.
 
 On a **self-hosted** enclave the same `enclavia upgrade confirm` command runs a two-phase flow instead: the CLI fetches the exact payload plus a live nonce from the backend, signs it on your YubiKey (expect a PIN prompt and two touches), and submits the signed command. Everything downstream (dispatch, verification, chain link, cutover) is identical. See [Control-key custody](/custody#upgrading-a-self-hosted-enclave).
+
+## Minimum upgrade delay
+
+By default the activation delay is the operator's choice: confirm defaults to now plus 7 days, but `--immediate` can activate an upgrade within seconds. If your users need a *guaranteed* window to audit a pending upgrade before it activates, create the enclave with a minimum upgrade delay:
+
+```bash
+enclavia enclave create --upgradable --min-upgrade-delay 48h
+```
+
+The value (`30m`, `48h`, `7d`, or a bare number of seconds; maximum 90 days) is baked into every image built for the enclave, so it is covered by the enclave's PCR measurements and cannot be changed after create, not even by pushing a new version: upgrade builds carry the same value, so an upgrade can never shed the floor.
+
+Enforcement is done by the running enclave itself, not by backend policy. At confirm time the enclave checks the signed upgrade command's `valid_from` against its own clock and refuses anything earlier than now plus the configured delay. That makes the revocation window a verifiable property of the enclave's identity: anyone who reproduces the image or checks the PCRs knows that the code inside cannot be swapped faster than the declared delay, even by the legitimate control-key holder. A compromised control key cannot fast-track a malicious image past watching verifiers.
+
+Practical consequences:
+
+- `enclavia upgrade confirm --immediate` fails on these enclaves, and `--at` must be at least the delay in the future. The web dashboard disables the immediate option and floors the schedule picker.
+- With no explicit time, confirm schedules at now plus 7 days or now plus the delay, whichever is later.
+- **Revoke is unaffected.** The window exists precisely so that revocation and third-party auditing have guaranteed time before a confirmed upgrade activates.
+- The chain records `valid_from` and `issued_at` on every `upgrade` link, so verifiers can also check historically that the policy was respected.
+
+One trust caveat, stated plainly: the enclave checks `valid_from` against its own clock, and the guest clock is influenced by the host. A host that warps the clock forward can shrink the effective delay. The delay is therefore a strong guarantee against a compromised or coerced key holder, and a weaker one against a malicious hosting substrate (which the attestation model already treats as the adversary for confidentiality, not availability).
 
 ## Revoking an upgrade
 

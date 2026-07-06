@@ -55,6 +55,7 @@ For non-upgradable enclaves (the default), the enclave's identity is pinned to t
 | `--egress-config <path>` | unset | Path to a JSON allowlist file. Mutually exclusive with `--egress-allow` / `--egress-resolver`. See [Outbound egress allowlist](/egress#json-schema). |
 | `--upgradable` | off | Mark the enclave as upgradable. Future pushes are staged rather than rejected. Immutable post-create. See [Staged deployments](/upgrades). |
 | `--control-key <name>` | unset (managed) | Use self-hosted control-key custody: register the named local key (from `enclavia key generate --yubikey`) as this enclave's control key, so only your hardware can authorize upgrades. Implies `--upgradable`. Immutable post-create. See [Control-key custody](/custody). |
+| `--min-upgrade-delay <duration>` | unset (no minimum) | Minimum delay between confirming an upgrade and it taking effect, e.g. `30m`, `48h`, `7d`, or a bare number of seconds. Baked into the measured image, so the enclave itself rejects any earlier activation, including `--immediate`, even from the control-key holder. Requires `--upgradable`. Maximum 90 days. Immutable post-create. See [Minimum upgrade delay](/upgrades#minimum-upgrade-delay). |
 
 ### Persistent storage
 
