@@ -91,14 +91,18 @@ The backend keeps the enclave in `waiting_for_image` for up to **30 minutes** af
 ```bash
 enclavia enclave list                  # all your enclaves
 enclavia enclave status <id>           # detail: status, instance type, image, vsock CID, PCRs
+enclavia enclave logs <id>             # build log + (debug enclaves) runtime log
 enclavia enclave stop <id>             # stop a running enclave (terminates the instance, keeps storage)
 enclavia enclave start <id>            # boot a stopped enclave, re-mounting any provisioned storage
+enclavia enclave restart <id>          # server-side stop + start; applies pending secret changes
 enclavia enclave destroy <id>          # delete the enclave record (and any provisioned storage)
 ```
 
-`enclave list` and the other commands accept the same unique-prefix form as `push` (anywhere unambiguous resolves to a single id). `enclave status` and `enclave destroy` are currently stricter: they want the full UUID.
+`push` and `reproduce` accept any unique prefix of the enclave id (they resolve it against your enclave list). The lifecycle commands above currently want the full UUID.
 
 `status` shows populated PCRs (`pcr0`, `pcr1`, `pcr2` as hex) once the build completes. Those are the values you'll pin in the client when [connecting](/connect).
+
+`logs` prints two sections: the **build log** (the EIF build output, available once the build has started) and the **runtime log** (the guest serial console, captured only for debug/QEMU enclaves; production Nitro enclaves have no runtime log by design). With `--json` it emits the raw `{"build_log": ..., "runtime_log": ...}` object for piping. It's the first place to look when `status` shows `error` during a build or boot.
 
 ## Status meanings
 
@@ -108,7 +112,7 @@ enclavia enclave destroy <id>          # delete the enclave record (and any prov
 | `building` | The backend is producing the enclave image (EIF) from your Docker image. |
 | `running` | The enclave is up. The proxy URL is `wss://<id>.enclaves.beta.enclavia.io`. |
 | `stopped` | The instance is no longer running. The record (and storage if any) is preserved. |
-| `error` | Something failed; `error_message` in `enclave status` has details. |
+| `error` | Something failed; `error_message` in `enclave status` has details, and `enclave logs` has the full build log. |
 
 ## Connect
 

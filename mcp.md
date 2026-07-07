@@ -87,11 +87,16 @@ The connector exposes one tool per CLI verb. Anything the agent calls runs again
 |------|----------------|
 | `enclave_list` | `enclavia enclave list` |
 | `enclave_status` | `enclavia enclave status <id>` |
-| `enclave_logs` | reads build + runtime logs |
+| `enclave_logs` | `enclavia enclave logs <id>` |
 | `enclave_create` | `enclavia enclave create [--instance-type ... --container-port ... --storage-size-bytes ...]` |
 | `enclave_start` | `enclavia enclave start <id>` |
 | `enclave_stop` | `enclavia enclave stop <id>` |
 | `enclave_destroy` | `enclavia enclave destroy <id>` |
+| `upgrade_chain` | `enclavia upgrade chain <id>` |
+| `upgrade_list` | `enclavia upgrade list <id>` |
+| `upgrade_status` | polls one staged upgrade (`enclavia upgrade list <id>` shows the same fields) |
+| `upgrade_confirm` | `enclavia upgrade confirm <id> <upgrade-id>` (managed custody only) |
+| `upgrade_revoke` | `enclavia upgrade revoke <id> <upgrade-id>` (managed custody only) |
 
 A useful prompt to verify the connector is wired up:
 
