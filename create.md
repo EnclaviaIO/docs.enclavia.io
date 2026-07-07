@@ -98,7 +98,7 @@ enclavia enclave restart <id>          # server-side stop + start; applies pendi
 enclavia enclave destroy <id>          # delete the enclave record (and any provisioned storage)
 ```
 
-`push` and `reproduce` accept any unique prefix of the enclave id (they resolve it against your enclave list). The lifecycle commands above currently want the full UUID.
+Every command that takes an enclave id (the lifecycle commands above, plus `push`, `reproduce`, and the `secret` and `upgrade` subcommands) accepts any unique prefix of it, resolved against your enclave list. If a prefix matches more than one enclave the command fails and lists the candidates.
 
 `status` shows populated PCRs (`pcr0`, `pcr1`, `pcr2` as hex) once the build completes. Those are the values you'll pin in the client when [connecting](/connect).
 
