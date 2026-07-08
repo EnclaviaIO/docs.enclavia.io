@@ -12,14 +12,14 @@ The rest of this page covers the embed-the-SDK path.
 
 Each running enclave is reachable at `wss://<id>.enclaves.beta.enclavia.io`, the WebSocket-based proxy that bridges your client to the enclave's vsock channel. The client speaks Noise+CBOR directly to the in-enclave responder; the proxy is protocol-agnostic and never sees plaintext.
 
-The reference client is the Rust `enclavia` crate from this workspace. It runs natively (Tokio) and is structured so it can also target WebAssembly.
+The reference client is the Rust [`enclavia`](https://crates.io/crates/enclavia) crate, published on crates.io. It runs natively (Tokio) and also compiles to WebAssembly; the browser/Node packaging is on npm as [`@enclavia/client-wasm`](https://www.npmjs.com/package/@enclavia/client-wasm) (see [Browser and Node](#browser-and-node) below).
 
 ## Add the dependency
 
 ```toml
 # Cargo.toml
 [dependencies]
-enclavia = { git = "https://github.com/EnclaviaIO/enclavia" }
+enclavia = "0.1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
@@ -32,11 +32,12 @@ use enclavia::{Client, Pcrs};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let pcrs = Pcrs {
-        pcr0: hex::decode("...your pcr0...")?,
-        pcr1: hex::decode("...your pcr1...")?,
-        pcr2: hex::decode("...your pcr2...")?,
-    };
+    // Hex strings copied verbatim from `enclavia enclave status`.
+    let pcrs = Pcrs::from_hex(
+        "...your pcr0...",
+        "...your pcr1...",
+        "...your pcr2...",
+    )?;
 
     let client = Client::connect(
         "wss://<enclave-id>.enclaves.beta.enclavia.io",
@@ -101,6 +102,39 @@ let client = Client::builder("wss://...local-debug-url...")
 
 `debug_mode(true)` only verifies the nonce binding — never use it against production enclaves.
 
-## Browser
+## Browser and Node
 
-The same crate is structured to compile to WebAssembly so the encrypted channel terminates in the user's browser. The browser-side wrapper is published separately; this page will be updated when it ships in the public beta.
+The same Rust core compiles to WebAssembly and is published on npm as [`@enclavia/client-wasm`](https://www.npmjs.com/package/@enclavia/client-wasm). It runs in browsers and in any JS runtime with a global `WebSocket` (Node 22+, Deno), and performs the same attestation verification as the native SDK, so the encrypted channel terminates in the user's browser and no proxy has to be trusted.
+
+```bash
+npm install @enclavia/client-wasm
+```
+
+```js
+import init, { connect } from "@enclavia/client-wasm";
+await init();   // loads the wasm module (bundlers resolve the .wasm asset)
+
+const client = await connect(
+  "wss://<id>.enclaves.beta.enclavia.io",
+  { pcr0: "...", pcr1: "...", pcr2: "..." },  // hex, from `enclavia enclave status`
+  { debugMode: true },                        // beta/QEMU only; omit on production Nitro
+);
+
+const resp = await client.fetch("GET", "/health");
+console.log(resp.status, new TextDecoder().decode(resp.body));
+```
+
+In Node (no bundler), pass the wasm bytes to `init` yourself:
+
+```js
+import { readFileSync } from "node:fs";
+import init, { connect } from "@enclavia/client-wasm";
+
+await init({
+  module_or_path: readFileSync(
+    new URL(import.meta.resolve("@enclavia/client-wasm/wasm")),
+  ),
+});
+```
+
+Non-HTTP protocols can use `client.openStream(firstBytes)` for a raw byte pipe over the same attested channel. `connect` also accepts `trustUpgrades: { backendUrl, enclaveId }`, mirroring the native `ClientBuilder::trust_upgrades`. See the [`enclavia-wasm` README](https://github.com/EnclaviaIO/enclavia/tree/master/enclavia-wasm) for the full surface and its two WebSocket-inherent differences from the native SDK.
