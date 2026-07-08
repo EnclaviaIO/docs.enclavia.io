@@ -21,7 +21,7 @@ features:
   - title: Reproducible builds
     details: '`enclavia reproduce` rebuilds the enclave image from the exact recorded sources and compares the PCRs to the deployed enclave, so anyone can verify the running code matches what was pushed, not just trust the attestation. Provable, end to end.'
   - title: Encrypted from the browser
-    details: The included WASM-friendly client speaks the Noise channel directly to the enclave over a WebSocket proxy. The plaintext never leaves the user's device or the enclave.
+    details: The client SDK ships for Rust and, as `@enclavia/client-wasm` on npm, for browsers and Node. It speaks the Noise channel directly to the enclave over a WebSocket proxy, so the plaintext never leaves the user's device or the enclave.
   - title: Storage sealed to your enclave
     details: Optional persistent volumes are LUKS-encrypted with a passphrase held in AWS KMS. The key is only released after attestation matches your image's PCRs, so the data is bound to the same identity as the code that wrote it.
   - title: Drive it from your AI agent
@@ -34,8 +34,8 @@ Enclavia is a managed platform for running container workloads inside hardware-a
 
 The pieces a user touches:
 
-- **`enclavia` CLI** — authenticate, push images, create and manage enclaves.
-- **`enclavia` client library** (Rust) — connect from a server or browser, verify attestation, send HTTP through the encrypted channel.
+- **`enclavia` CLI** — authenticate, push images, create and manage enclaves. On crates.io as [`enclavia-cli`](https://crates.io/crates/enclavia-cli).
+- **`enclavia` client SDK** — connect from a server or browser, verify attestation, send HTTP through the encrypted channel. On crates.io as [`enclavia`](https://crates.io/crates/enclavia) (Rust) and on npm as [`@enclavia/client-wasm`](https://www.npmjs.com/package/@enclavia/client-wasm) (browsers, Node 22+, Deno).
 - **Backend API** — `https://api.beta.enclavia.io`. Documented implicitly through the CLI.
 - **MCP server** — `https://mcp.beta.enclavia.io/mcp`. Lets [any MCP-aware agent](/mcp) (Claude, ChatGPT, Cursor, Codex, …) drive your enclaves with the same identity the CLI uses.
 
