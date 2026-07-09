@@ -24,6 +24,8 @@ Every sample expects the same basic prerequisites: the [`enclavia` CLI](/install
 2. **Create the enclave** with `enclavia enclave create` (the sample's README spells out the flags — usually `--container-port` and sometimes an [egress allowlist](/egress)).
 3. **Push the image** with `enclavia push <local-image> <enclave-id>`. The push flips the enclave to `building`; once it's `running`, the sample shows how to connect to it (either from the [client library](/connect) or, where relevant, the dashboard).
 
+Steps 2 and 3 collapse into one when you're at a terminal: [`enclavia deploy <local-image> [create flags]`](/deploy) creates, pushes, and follows the build until the enclave is running.
+
 If you have the [MCP connector](/mcp) wired up, step 2 (and any inspection along the way) can be driven from your AI agent in natural language. Step 3 still runs on your laptop because pushing needs your local Docker daemon.
 
 ## Just the management surface, no Docker

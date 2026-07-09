@@ -2,6 +2,8 @@
 
 Enclavia runs each enclave from a Docker image hosted in a dedicated private repo at `registry.beta.enclavia.io/<your-handle>/<enclave-uuid>`. `enclavia push` is a thin wrapper around `docker tag` + `docker push` that handles registry login and the per-enclave namespacing for you.
 
+For a brand-new enclave you can skip the separate push entirely: [`enclavia deploy`](/deploy) runs create, push, and the build watch as one command. `push` on its own remains the right tool for scripts, agents, and for shipping a new image to an existing [upgradable](/upgrades) enclave.
+
 ## Prerequisites
 
 - You're [authenticated](/auth); `enclavia enclave list` returns without error.

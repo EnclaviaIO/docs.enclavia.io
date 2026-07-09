@@ -7,6 +7,10 @@ There are two ways to let an AI agent manage your enclaves, and they trade off i
 
 If your agent already has a terminal, prefer this path. If it does not, use the MCP server.
 
+::: warning Agents should not use `enclavia deploy`
+[`enclavia deploy`](/deploy) is a human convenience that wraps create + push + a long-lived watch (spinner, streamed build log) in one process. Agents should run the individual commands instead: `enclave create`, `push`, then poll `enclave status`. That keeps each step's JSON output and exit code separately actionable and avoids holding a process open for the many minutes a build can take. The skill file already steers agents this way.
+:::
+
 ## The `--json` contract
 
 `--json` is a global flag: it works on every subcommand and in either position (`enclavia --json enclave list` or `enclavia enclave list --json`). It turns the CLI into a clean, scriptable surface. The contract an agent relies on:

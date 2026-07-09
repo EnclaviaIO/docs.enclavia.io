@@ -2,6 +2,10 @@
 
 `enclavia enclave create` reserves an enclave id and provisions a dedicated private registry repo for it at `<your-handle>/<enclave-uuid>`. The enclave starts in `waiting_for_image` and stays there until you `enclavia push` your container image into that repo. Builds are asynchronous; you poll for status.
 
+::: tip Working interactively?
+[`enclavia deploy`](/deploy) rolls create, push, and the build watch into one command, and accepts every flag documented on this page. Prefer it when you're at a terminal; use the individual `create` / `push` steps below in scripts and agents.
+:::
+
 ## The minimum
 
 ```bash
