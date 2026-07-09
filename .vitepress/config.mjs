@@ -99,6 +99,7 @@ const sidebar = [
       { text: 'Overview', link: '/' },
       { text: 'Install the CLI', link: '/install' },
       { text: 'Authenticate', link: '/auth' },
+      { text: 'Deploy in one command', link: '/deploy' },
       { text: 'Create an enclave', link: '/create' },
       { text: 'Push an image', link: '/push' },
       { text: 'Connect from a client', link: '/connect' },

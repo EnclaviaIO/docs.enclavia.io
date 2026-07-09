@@ -14,8 +14,8 @@ hero:
       link: /samples
 
 features:
-  - title: Create, then push
-    details: '`enclavia enclave create` reserves an enclave and a dedicated private repo for it in your registry namespace. `enclavia push` uploads your image into that repo, which triggers the build and boots the enclave inside AWS Nitro.'
+  - title: One command to deploy
+    details: '`enclavia deploy myapp:v1` creates the enclave, pushes your image, and follows the build live until the enclave is running inside AWS Nitro. The individual `create` and `push` steps remain available for scripts and agents.'
   - title: Attested by default
     details: Every connection performs a Noise NN handshake, requests an attestation document, and verifies PCR0/1/2 against the image you pushed. No remote agent, no extra steps.
   - title: Reproducible builds
@@ -45,9 +45,8 @@ The fastest path to seeing Enclavia work is to run a [sample app](/samples) end 
 
 1. [Install the CLI](/install).
 2. [Authenticate](/auth) by approving a session in the web UI.
-3. [Create an enclave](/create), which reserves a private repo for it in your registry namespace.
-4. [Push an image](/push) to that enclave, which triggers the build.
-5. [Connect](/connect) to it from your code, or [point an AI agent](/mcp) (Claude, ChatGPT, Cursor, Codex, …) at the same enclaves over MCP.
+3. [Deploy your image](/deploy) with `enclavia deploy myapp:v1`, which creates the enclave, pushes the image, and follows the build until it's running. (Scripts and agents should run the individual [create](/create) and [push](/push) steps instead.)
+4. [Connect](/connect) to it from your code, or [point an AI agent](/mcp) (Claude, ChatGPT, Cursor, Codex, …) at the same enclaves over MCP.
 
 ## Beta scope
 
