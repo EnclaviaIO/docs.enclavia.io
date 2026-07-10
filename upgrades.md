@@ -16,6 +16,12 @@ enclavia enclave create
 
 The choice is permanent for the enclave's lifetime. Existing enclaves created before this feature shipped are non-upgradable.
 
+::: warning Decide before you create: iterating wants `--upgradable`
+Because the choice is immutable, it is worth thinking about at `create` time rather than discovering it the hard way. On a **non-upgradable** enclave (the default), shipping any new image, even a one-line bug fix, means `destroy`, `create` a fresh enclave, `push`, and re-pin the new PCRs in every client. That is the right lockdown for a settled production deployment, but painful while you are still iterating.
+
+If you expect to push more than once, create with `--upgradable` and use [`--immediate`](#confirming-an-upgrade) during development to cut over in seconds. Tighten later (a new non-upgradable enclave, or a [minimum upgrade delay](#minimum-upgrade-delay)) once the code has settled.
+:::
+
 **Upgradable enclaves** get an ECDSA P-256 control keypair. The public key is baked into every EIF built for the enclave, so the running version can verify that any upgrade or revocation command came from an authorized source. Who holds the private key depends on the enclave's custody mode:
 
 - **Managed (default):** the private key stays in the backend, encrypted at rest. The backend signs confirm and revoke commands itself, and you approve them from the web dashboard.
