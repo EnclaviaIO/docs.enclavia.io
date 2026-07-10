@@ -88,6 +88,62 @@ With the `json` feature, `RequestBuilder::json(&value)` serializes a `serde::Ser
 
 The host header is filled in from the URL automatically. Each request is encrypted under the same Noise transport and forwarded plaintext to the inner container on the `--container-port` you specified at [create time](/create#flags).
 
+## The connection does not auto-reconnect
+
+A `Client` holds a **single** long-lived attested WebSocket channel. It is opened once, at connect/build time, and the SDK does **not** re-dial it if it drops. There is no built-in reconnect loop, retry, or backoff in either the native or the WASM SDK. This is deliberate: re-establishing the channel means redoing the Noise handshake and re-verifying the attestation, and the SDK cannot know your retry policy or whether the enclave you were pinned to still has the same PCRs.
+
+When the channel drops (most commonly because the enclave [restarted or was upgraded](/create#lifecycle-commands), which tears the old connection down), the failure surfaces as an error on the request you attempted (in the native SDK, `Error::ConnectionClosed`; in WASM, a rejected promise). The `Client` is dead at that point: it will not recover, and subsequent requests on it also fail. **Reconnecting is the application's responsibility.** The pattern is:
+
+- **Connect lazily** and hold the `Client`, but be ready to throw it away.
+- On a dropped-channel error, **build a fresh `Client`** (which re-runs the handshake and attestation) and retry the request once. Beyond a single retry, apply your own backoff so a genuinely-down enclave does not spin.
+
+A minimal retry-on-drop wrapper, native Rust:
+
+```rust
+async fn fetch_with_reconnect(
+    url: &str,
+    pcrs: &Pcrs,
+    path: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    for attempt in 0..2 {
+        // Reconnect (or first connect) on each attempt.
+        let client = Client::connect(url, pcrs.clone()).await?;
+        match client.get(path).send().await {
+            Ok(resp) => return Ok(resp.text()?),
+            // Channel died mid-flight: drop this client and reconnect once.
+            Err(e) if attempt == 0 => {
+                eprintln!("channel dropped ({e}), reconnecting");
+                continue;
+            }
+            Err(e) => return Err(e.into()),
+        }
+    }
+    unreachable!()
+}
+```
+
+The same shape in the WASM SDK (rebuild the client with `connect`, retry the `fetch` once):
+
+```js
+async function fetchWithReconnect(url, pcrs, method, path, options) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const client = await connect(url, pcrs, { debugMode: true });
+    try {
+      return await client.fetch(method, path, options);
+    } catch (e) {
+      if (attempt === 0) continue;   // channel dropped: reconnect once
+      throw e;
+    }
+  }
+}
+```
+
+In a real app you would cache the `Client` between calls and only reconnect on failure, rather than reconnecting on every request as these minimal examples do. The load-bearing point is that a request can fail because the channel died, and the recovery is a fresh `connect`, not a retry on the same dead `Client`.
+
+::: tip Expected right after a deploy or restart
+A dropped or failed client connection immediately after you restart, stop-then-start, or upgrade an enclave is **expected**, not a bug: the old attested channel went away with the old enclave. Reconnect (which re-verifies the new enclave's attestation) and carry on. If the enclave was [upgraded](/upgrades) to a new image, its PCRs also changed, so either re-pin the new values from `enclavia enclave status` or connect with `trustUpgrades` / `ClientBuilder::trust_upgrades` so the client follows the signed upgrade chain automatically.
+:::
+
 ## Debug-mode enclaves
 
 If you're targeting a debug-mode enclave, the attestation document is a stub that echoes the handshake nonce instead of being COSE-signed. Use the builder explicitly:
@@ -123,6 +179,43 @@ const client = await connect(
 const resp = await client.fetch("GET", "/health");
 console.log(resp.status, new TextDecoder().decode(resp.body));
 ```
+
+### The `fetch` signature
+
+`client.fetch` takes three arguments; the third carries request headers and a body, so it is not limited to bodyless GETs:
+
+```js
+client.fetch(method, path, options?) => Promise<{ status, headers, body }>
+```
+
+- `method`: an HTTP method string (`"GET"`, `"POST"`, `"PUT"`, `"DELETE"`, `"PATCH"`, `"HEAD"`, `"OPTIONS"`; case-insensitive).
+- `path`: the request path, e.g. `"/api/run"`.
+- `options` (optional):
+  - `headers`: an array of `[name, value]` string pairs.
+  - `body`: a `Uint8Array` (encode strings/JSON yourself).
+
+The resolved response is `{ status: number, headers: [name, value][], body: Uint8Array }`. `body` is always raw bytes; decode it with `TextDecoder` (or `JSON.parse(new TextDecoder().decode(resp.body))` for JSON).
+
+A POST with a JSON body and a custom header:
+
+```js
+const payload = new TextEncoder().encode(JSON.stringify({ input: "..." }));
+
+const resp = await client.fetch("POST", "/api/run", {
+  headers: [
+    ["Content-Type", "application/json"],
+    ["Authorization", "Bearer ..."],
+  ],
+  body: payload,
+});
+
+if (resp.status !== 200) {
+  throw new Error(`enclave returned ${resp.status}`);
+}
+const result = JSON.parse(new TextDecoder().decode(resp.body));
+```
+
+There is no JSON convenience helper on the WASM side (the `json` feature is native-Rust only), so serialize the body and set `Content-Type` yourself as above.
 
 In Node (no bundler), pass the wasm bytes to `init` yourself:
 
