@@ -101,6 +101,7 @@ const sidebar = [
       { text: 'Authenticate', link: '/auth' },
       { text: 'Deploy in one command', link: '/deploy' },
       { text: 'Create an enclave', link: '/create' },
+      { text: 'Deploy on Enclavia button', link: '/deploy-button' },
       { text: 'Push an image', link: '/push' },
       { text: 'Connect from a client', link: '/connect' },
       { text: 'Connect an AI agent (MCP)', link: '/mcp' },
