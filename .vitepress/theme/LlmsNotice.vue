@@ -7,19 +7,13 @@
 </template>
 
 <style scoped>
+/* Hidden from human readers on purpose. The notice only exists for AI
+   agents that fetch the raw HTML (it is SSR-rendered, so the text is in
+   the page source regardless of display), pointing them at /llms.txt.
+   `display: none` keeps it in the served HTML while removing it from the
+   rendered page, so human visitors don't see a banner on every page. The
+   human-facing pointer lives in the footer. */
 .llms-notice {
-  margin: 0 0 24px;
-  padding: 8px 14px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 6px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--vp-c-text-2);
-}
-
-.llms-notice a {
-  color: var(--vp-c-brand-1);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  display: none;
 }
 </style>
