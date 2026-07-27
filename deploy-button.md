@@ -1,3 +1,7 @@
+---
+description: "One-click deploy badge for READMEs, driven by a manifest URL committed to your repo"
+---
+
 # Deploy on Enclavia button
 
 A **Deploy on Enclavia** button lets anyone launch your image inside an enclave from the browser, with no CLI and no local Docker. You add one badge to your README; a visitor clicks it, reviews the configuration on a prefilled create page, fills in any secrets, and creates the enclave.

@@ -28,6 +28,11 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Fail the build when a sidebar-reachable page is missing from the
+      # generated llms.txt / llms-full.txt (index drift is silent otherwise).
+      - name: llms.txt drift guard
+        run: node scripts/check-llms-drift.mjs
+
       - name: Upload built site
         uses: actions/upload-artifact@v4
         with:

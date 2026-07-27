@@ -1,3 +1,7 @@
+---
+description: "Who holds the upgrade control key: managed custody vs self-hosted (YubiKey), and the tradeoffs"
+---
+
 # Control-key custody: managed vs self-hosted
 
 Every [upgradable enclave](/upgrades) has an ECDSA P-256 control keypair. The public half is baked into every EIF built for the enclave, so the running version can verify that any upgrade or revocation command came from an authorized source. Custody is about who holds the private half, and therefore who can authorize those commands.

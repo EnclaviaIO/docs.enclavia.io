@@ -1,3 +1,7 @@
+---
+description: "Drive the CLI from a local agent: the --json contract, the skill file, headless auth"
+---
+
 # Drive enclavia from a local AI agent (CLI skill)
 
 There are two ways to let an AI agent manage your enclaves, and they trade off in opposite directions:

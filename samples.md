@@ -1,3 +1,7 @@
+---
+description: "Runnable sample apps that walk the create, push, connect flow end to end"
+---
+
 # Sample apps
 
 The fastest way to feel what Enclavia does is to run a sample. Every sample is a self-contained Docker image with a short README that walks you through `create` → `push` → connect. Pick one, follow its README, and you'll have something running inside an attested enclave in a few minutes.

@@ -1,3 +1,7 @@
+---
+description: "Rust and WASM client SDK: attestation verification, PCR pinning, and reconnect handling"
+---
+
 # Connect from a client
 
 There are two ways to talk to a running enclave, and the right one depends on who you trust to verify the attestation.

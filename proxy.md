@@ -1,3 +1,7 @@
+---
+description: "Stable per-enclave HTTPS/WebSocket URL with proxy-side attestation: trust model and worked examples"
+---
+
 # Hosted HTTPS proxy
 
 The public beta exposes every running enclave at a stable HTTPS URL that speaks plain HTTP and WebSocket. Use it when you want to reach an enclave from a tool that doesn't embed the `enclavia` client SDK: `curl`, a browser fetch, a server-side process in any language, a CDN, a webhook receiver. For a trustless connection that performs attestation client-side, see [Connect from a client](/connect).

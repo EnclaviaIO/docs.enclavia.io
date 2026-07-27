@@ -1,3 +1,7 @@
+---
+description: "Outbound allowlist (hostnames, IPv4 literals, CIDRs) baked into the measured enclave image"
+---
+
 # Outbound network access (egress allowlist)
 
 By default a running enclave has **no outbound network**. Nothing the workload writes leaves the VM, and no library will see "connection succeeded" against any external host. This is intentional: an enclave's value comes from being able to *prove* what it does with your data, and unconstrained egress would let a workload silently exfiltrate.

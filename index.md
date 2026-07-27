@@ -1,4 +1,6 @@
 ---
+title: Overview
+description: "What Enclavia is, the components (CLI, client SDK, backend API, MCP server), and the beta hostnames"
 layout: home
 
 hero:
@@ -36,7 +38,7 @@ The pieces a user touches:
 
 - **`enclavia` CLI** — authenticate, push images, create and manage enclaves. On crates.io as [`enclavia-cli`](https://crates.io/crates/enclavia-cli).
 - **`enclavia` client SDK** — connect from a server or browser, verify attestation, send HTTP through the encrypted channel. On crates.io as [`enclavia`](https://crates.io/crates/enclavia) (Rust) and on npm as [`@enclavia/client-wasm`](https://www.npmjs.com/package/@enclavia/client-wasm) (browsers, Node 22+, Deno).
-- **Backend API** — `https://api.beta.enclavia.io`. Documented implicitly through the CLI.
+- **Backend API** — `https://api.beta.enclavia.io`. Not a supported public interface during the beta: the CLI, the MCP server, and the [agent skill](/agent-skill) are the supported surfaces on top of it. A standalone REST reference may be published once the API stabilizes.
 - **MCP server** — `https://mcp.beta.enclavia.io/mcp`. Lets [any MCP-aware agent](/mcp) (Claude, ChatGPT, Cursor, Codex, …) drive your enclaves with the same identity the CLI uses.
 
 ## Where to start

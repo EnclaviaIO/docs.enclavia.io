@@ -1,3 +1,7 @@
+---
+description: "Staged deployments for upgradable enclaves: genesis, staging, confirm, minimum delay, revoke, the upgrade chain"
+---
+
 # Staged deployments and the upgrade chain
 
 Enclavia treats every version transition as a deliberate, auditable event. The first deploy (the **genesis**) launches immediately. Every subsequent push to an upgradable enclave is staged: the new image is built but not launched. An explicit confirm step is required to schedule the swap, and the running enclave keeps serving until the scheduled time arrives.

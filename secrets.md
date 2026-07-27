@@ -1,3 +1,7 @@
+---
+description: "Encrypted environment-variable secrets injected at enclave boot: CLI and dashboard usage, limits"
+---
+
 # Per-enclave secrets
 
 Enclavia lets you attach small, named environment-variable secrets to an enclave. The backend stores them encrypted at rest, the values never appear in any API response, and they only ever leave the backend over an authenticated single-shot vsock channel into the enclave at boot. Inside the enclave they land in the workload's `process.env` before the container's entrypoint runs. Plaintext is never written to disk inside the EIF and never logged.
