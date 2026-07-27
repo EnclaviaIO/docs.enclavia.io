@@ -42,6 +42,12 @@ exclude = [
   # references the host as identifier; nothing to probe.
   "^https://api\\.beta\\.enclavia\\.io/?$",
   "^https://mcp\\.beta\\.enclavia\\.io/?$",
+  # llms.txt links to this site's own pages with absolute URLs (agents
+  # that allowlist fetch targets need them). Probing the live site from
+  # CI is a chicken-and-egg race for pages added in the same PR; the
+  # scripts/check-llms-drift.mjs guard already validates these against
+  # the built output instead.
+  "^https://docs\\.enclavia\\.io/",
 ]
 
 # Don't follow `mailto:` etc. Keep external + relative HTTP only.
