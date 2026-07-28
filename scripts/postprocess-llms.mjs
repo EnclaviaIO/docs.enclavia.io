@@ -11,7 +11,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { cleanLlmsMarkdown } from './llms-transform.mjs'
+import { cleanLlmsMarkdown, ensureIndexH1 } from './llms-transform.mjs'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dist = path.join(repoRoot, '.vitepress', 'dist')
@@ -37,7 +37,7 @@ const targets = [...walk(dist)].filter((f) => {
 let changed = 0
 for (const file of targets) {
   const before = fs.readFileSync(file, 'utf8')
-  const after = cleanLlmsMarkdown(before)
+  const after = ensureIndexH1(cleanLlmsMarkdown(before))
   if (after !== before) {
     fs.writeFileSync(file, after)
     changed++
