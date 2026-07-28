@@ -56,4 +56,4 @@ The public beta runs at `beta.enclavia.io` and is intended for evaluation. Image
 
 ## For AI agents
 
-A machine-readable index of these docs is published at [`/llms.txt`](/llms.txt) — the convention for surfacing documentation to LLMs without parsing HTML. Feed it to your agent of choice.
+A machine-readable index of these docs is published at [`/llms.txt`](/llms.txt) — the convention for surfacing documentation to LLMs without parsing HTML. The complete corpus, every page rendered into a single file, is at [`/llms-full.txt`](/llms-full.txt). Feed either to your agent of choice.

@@ -3,14 +3,16 @@ import llmstxt from 'vitepress-plugin-llms'
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { cleanLlmsMarkdown } from '../scripts/llms-transform.mjs'
-
-const DOCS_DOMAIN = 'https://docs.enclavia.io'
+import { cleanLlmsMarkdown, ensureIndexH1, DOCS_DOMAIN } from '../scripts/llms-transform.mjs'
 
 const LLMS_DESCRIPTION =
   'Documentation for Enclavia — running Docker images inside attested enclaves with end-to-end encryption from the browser. Public beta.'
+// The llms-full.txt pointer keeps the full bundle discoverable from llms.txt
+// itself: fetchers that only follow links found in the index would otherwise
+// never learn the file exists.
 const LLMS_DETAILS =
-  'Covers installing the `enclavia` CLI, authenticating, pushing images to the per-user registry, creating enclaves, and connecting to them with the encrypted client library.'
+  'Covers installing the `enclavia` CLI, authenticating, pushing images to the per-user registry, creating enclaves, and connecting to them with the encrypted client library. ' +
+  `The complete rendered corpus (every page in one file) is published at ${DOCS_DOMAIN}/llms-full.txt.`
 
 /**
  * vitepress-plugin-llms only emits llms.txt / llms-full.txt during the
@@ -86,7 +88,7 @@ function llmstxtDev({ siteTitle, sidebar, description, details }) {
           const { content } = splitFrontmatter(body)
           parts.push(`---\nurl: ${DOCS_DOMAIN}${item.page}.md\n---\n${cleanLlmsMarkdown(content).trimEnd()}\n`)
         }
-        return parts.join('\n')
+        return ensureIndexH1(parts.join('\n'))
       }
 
       server.middlewares.use(async (req, res, next) => {
@@ -198,7 +200,7 @@ export default defineConfig({
     },
 
     footer: {
-      message: 'Built for AI agents too — fetch <a href="/llms.txt">/llms.txt</a> for a machine-readable index of these docs.',
+      message: 'Built for AI agents too — fetch <a href="/llms.txt">/llms.txt</a> for a machine-readable index of these docs, or <a href="/llms-full.txt">/llms-full.txt</a> for the full corpus in one file.',
       copyright: 'Enclavia · provable computation, as simple as pushing a Docker image.',
     },
 
