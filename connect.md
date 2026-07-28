@@ -1,12 +1,12 @@
 ---
-description: "Rust and WASM client SDK: attestation verification, PCR pinning, and reconnect handling"
+description: "Rust, TypeScript (WASM), and Dart client SDKs: attestation verification, PCR pinning, and reconnect handling"
 ---
 
 # Connect from a client
 
 There are two ways to talk to a running enclave, and the right one depends on who you trust to verify the attestation.
 
-**Embed the SDK in your client** (this page). Your code opens a WebSocket directly to `wss://<id>.enclaves.beta.enclavia.io`, performs the Noise handshake itself, fetches the attestation document, validates the AWS Nitro signing chain, and pins the PCRs. **You are the verifier.** No third party can hand you tampered bytes without your client detecting it. Use this path when the client is yours to ship: a Rust binary, a wallet that compiles in the SDK, eventually a WASM build in the browser.
+**Embed the SDK in your client** (this page). Your code opens a WebSocket directly to `wss://<id>.enclaves.beta.enclavia.io`, performs the Noise handshake itself, fetches the attestation document, validates the AWS Nitro signing chain, and pins the PCRs. **You are the verifier.** No third party can hand you tampered bytes without your client detecting it. Use this path when the client is yours to ship: a Rust binary, a WASM build in the browser or Node, a Dart or Flutter app.
 
 **Go through the HTTPS proxy at `https://<id>.enclaves.beta.enclavia.io/proxy/...`**. The proxy (we operate one on `*.enclaves.beta.enclavia.io`, or you can [self-host one](/self-host-proxy)) does the attestation verification on every request and tunnels plain HTTP/WebSocket to the enclave's workload. **The proxy operator is the verifier.** Use this path when you can't embed the SDK: an unmodified browser hitting a public URL, a curl pipeline, a client written in a language without a native enclavia SDK. PCR values are surfaced on every response as `X-Enclavia-PCR0..2` headers so a curious client can still check them out-of-band, but transport security between client and enclave reduces to "trust the proxy". See [Hosted HTTPS proxy](/proxy) for the user-side reference and [Self-host the proxy](/self-host-proxy) if you want to be the proxy operator yourself.
 
@@ -16,20 +16,54 @@ The rest of this page covers the embed-the-SDK path.
 
 Each running enclave is reachable at `wss://<id>.enclaves.beta.enclavia.io`, the WebSocket-based proxy that bridges your client to the enclave's vsock channel. The client speaks Noise+CBOR directly to the in-enclave responder; the proxy is protocol-agnostic and never sees plaintext.
 
-The reference client is the Rust [`enclavia`](https://crates.io/crates/enclavia) crate, published on crates.io. It runs natively (Tokio) and also compiles to WebAssembly; the browser/Node packaging is on npm as [`@enclavia/client-wasm`](https://www.npmjs.com/package/@enclavia/client-wasm) (see [Browser and Node](#browser-and-node) below).
+The security core is one Rust implementation, shipped in three packagings:
+
+- **Rust**: the reference [`enclavia`](https://crates.io/crates/enclavia) crate on crates.io, running natively on Tokio.
+- **TypeScript / JavaScript**: the same core compiled to WebAssembly, on npm as [`@enclavia/client-wasm`](https://www.npmjs.com/package/@enclavia/client-wasm). Runs in browsers and any JS runtime with a global `WebSocket` (Node 22+, Deno). See [Browser and Node specifics](#browser-and-node-specifics).
+- **Dart**: UniFFI bindings over the same core, on pub.dev as [`enclavia_dart`](https://pub.dev/packages/enclavia_dart), for Dart and Flutter apps on Android, iOS, Linux, macOS, and Windows. See [Dart and Flutter specifics](#dart-and-flutter-specifics).
+
+All three run the same Noise handshake and the same attestation verifier, so the encrypted channel terminates inside your app in every case.
 
 ## Add the dependency
+
+::: tabs key:lang
+
+== Rust
 
 ```toml
 # Cargo.toml
 [dependencies]
-enclavia = "0.1"
+enclavia = "0.2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
 The crate's public surface is small: `Client`, `ClientBuilder`, `Pcrs`, and a request builder. Optional `json` feature brings in `RequestBuilder::json`.
 
+== TypeScript
+
+```bash
+npm install @enclavia/client-wasm
+```
+
+The package bundles the compiled WASM module plus JS glue and TypeScript definitions; bundlers resolve the `.wasm` asset automatically (for plain Node see [Browser and Node specifics](#browser-and-node-specifics)).
+
+== Dart
+
+```yaml
+# pubspec.yaml
+dependencies:
+  enclavia_dart: ^0.2.0
+```
+
+The native library is compiled on your machine by Dart's Native Assets system on `dart pub get` / `dart run` / `flutter run`, so you need a Rust toolchain installed (via [rustup](https://rustup.rs/)). The first build takes a few minutes; subsequent builds are cached.
+
+:::
+
 ## Connect and verify
+
+::: tabs key:lang
+
+== Rust
 
 ```rust
 use enclavia::{Client, Pcrs};
@@ -54,7 +88,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-`Client::connect` does three things in one call:
+== TypeScript
+
+```js
+import init, { connect } from "@enclavia/client-wasm";
+await init();   // loads the wasm module
+
+const client = await connect(
+  "wss://<enclave-id>.enclaves.beta.enclavia.io",
+  { pcr0: "...", pcr1: "...", pcr2: "..." },  // hex, from `enclavia enclave status`
+);
+
+const resp = await client.fetch("GET", "/health");
+console.log(resp.status, new TextDecoder().decode(resp.body));
+```
+
+== Dart
+
+```dart
+import 'dart:convert';
+import 'package:enclavia_dart/enclavia_dart.dart';
+
+Future<void> main() async {
+  // `Pcrs` takes raw bytes: hex-decode the values from
+  // `enclavia enclave status` yourself (see example/main.dart in the
+  // package for a copy-pasteable helper).
+  final client = await Client.connect(
+    url: 'wss://<enclave-id>.enclaves.beta.enclavia.io',
+    pcrs: Pcrs(pcr0: pcr0Bytes, pcr1: pcr1Bytes, pcr2: pcr2Bytes),
+    options: null,
+  );
+
+  final resp = await client.fetch(method: 'GET', path: '/health', options: null);
+  print('${resp.status}: ${utf8.decode(resp.body)}');
+}
+```
+
+:::
+
+Connecting does three things in one call, in every SDK:
 
 1. Opens the WebSocket.
 2. Performs a Noise NN (`Noise_NN_25519_ChaChaPoly_BLAKE2s`) handshake.
@@ -74,6 +146,12 @@ PCRs are **per-enclave, not per-image** — the enclave's UUID is stamped into t
 
 ## Sending requests
 
+Every request is encrypted under the same Noise transport and forwarded plaintext to the inner container on the `--container-port` you specified at [create time](/create#flags). The host header is filled in from the URL automatically.
+
+::: tabs key:lang
+
+== Rust
+
 The request builder mirrors `reqwest`:
 
 ```rust
@@ -90,117 +168,9 @@ println!("body:   {}", resp.text()?);
 
 With the `json` feature, `RequestBuilder::json(&value)` serializes a `serde::Serialize` and sets `Content-Type: application/json` for you.
 
-The host header is filled in from the URL automatically. Each request is encrypted under the same Noise transport and forwarded plaintext to the inner container on the `--container-port` you specified at [create time](/create#flags).
+== TypeScript
 
-## The connection does not auto-reconnect
-
-A `Client` holds a **single** long-lived attested WebSocket channel. It is opened once, at connect/build time, and the SDK does **not** re-dial it if it drops. There is no built-in reconnect loop, retry, or backoff in either the native or the WASM SDK. This is deliberate: re-establishing the channel means redoing the Noise handshake and re-verifying the attestation, and the SDK cannot know your retry policy or whether the enclave you were pinned to still has the same PCRs.
-
-When the channel drops (most commonly because the enclave [restarted or was upgraded](/create#lifecycle-commands), which tears the old connection down), the failure surfaces as an error on the request you attempted (in the native SDK, `Error::ConnectionClosed`; in WASM, a rejected promise). The `Client` is dead at that point: it will not recover, and subsequent requests on it also fail. **Reconnecting is the application's responsibility.** The pattern is:
-
-- **Connect lazily** and hold the `Client`, but be ready to throw it away.
-- On a dropped-channel error, **build a fresh `Client`** (which re-runs the handshake and attestation) and retry the request once. Beyond a single retry, apply your own backoff so a genuinely-down enclave does not spin.
-
-A minimal retry-on-drop wrapper, native Rust:
-
-```rust
-async fn fetch_with_reconnect(
-    url: &str,
-    pcrs: &Pcrs,
-    path: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
-    for attempt in 0..2 {
-        // Reconnect (or first connect) on each attempt.
-        let client = Client::connect(url, pcrs.clone()).await?;
-        match client.get(path).send().await {
-            Ok(resp) => return Ok(resp.text()?),
-            // Channel died mid-flight: drop this client and reconnect once.
-            Err(e) if attempt == 0 => {
-                eprintln!("channel dropped ({e}), reconnecting");
-                continue;
-            }
-            Err(e) => return Err(e.into()),
-        }
-    }
-    unreachable!()
-}
-```
-
-The same shape in the WASM SDK (rebuild the client with `connect`, retry the `fetch` once):
-
-```js
-async function fetchWithReconnect(url, pcrs, method, path, options) {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const client = await connect(url, pcrs, { debugMode: true });
-    try {
-      return await client.fetch(method, path, options);
-    } catch (e) {
-      if (attempt === 0) continue;   // channel dropped: reconnect once
-      throw e;
-    }
-  }
-}
-```
-
-In a real app you would cache the `Client` between calls and only reconnect on failure, rather than reconnecting on every request as these minimal examples do. The load-bearing point is that a request can fail because the channel died, and the recovery is a fresh `connect`, not a retry on the same dead `Client`.
-
-::: tip Expected right after a deploy or restart
-A dropped or failed client connection immediately after you restart, stop-then-start, or upgrade an enclave is **expected**, not a bug: the old attested channel went away with the old enclave. Reconnect (which re-verifies the new enclave's attestation) and carry on. If the enclave was [upgraded](/upgrades) to a new image, its PCRs also changed, so either re-pin the new values from `enclavia enclave status` or connect with `trustUpgrades` / `ClientBuilder::trust_upgrades` so the client follows the signed upgrade chain automatically.
-:::
-
-## Debug-mode enclaves
-
-If you're targeting a debug-mode enclave, the attestation document is a stub that echoes the handshake nonce instead of being COSE-signed. Use the builder explicitly:
-
-```rust
-let client = Client::builder("wss://...local-debug-url...")
-    .pcrs(Pcrs { pcr0: vec![], pcr1: vec![], pcr2: vec![] })
-    .debug_mode(true)
-    .build()
-    .await?;
-```
-
-`debug_mode(true)` only verifies the nonce binding — never use it against production enclaves.
-
-## Browser and Node
-
-The same Rust core compiles to WebAssembly and is published on npm as [`@enclavia/client-wasm`](https://www.npmjs.com/package/@enclavia/client-wasm). It runs in browsers and in any JS runtime with a global `WebSocket` (Node 22+, Deno), and performs the same attestation verification as the native SDK, so the encrypted channel terminates in the user's browser and no proxy has to be trusted.
-
-```bash
-npm install @enclavia/client-wasm
-```
-
-```js
-import init, { connect } from "@enclavia/client-wasm";
-await init();   // loads the wasm module (bundlers resolve the .wasm asset)
-
-const client = await connect(
-  "wss://<id>.enclaves.beta.enclavia.io",
-  { pcr0: "...", pcr1: "...", pcr2: "..." },  // hex, from `enclavia enclave status`
-  { debugMode: true },                        // beta/QEMU only; omit on production Nitro
-);
-
-const resp = await client.fetch("GET", "/health");
-console.log(resp.status, new TextDecoder().decode(resp.body));
-```
-
-### The `fetch` signature
-
-`client.fetch` takes three arguments; the third carries request headers and a body, so it is not limited to bodyless GETs:
-
-```js
-client.fetch(method, path, options?) => Promise<{ status, headers, body }>
-```
-
-- `method`: an HTTP method string (`"GET"`, `"POST"`, `"PUT"`, `"DELETE"`, `"PATCH"`, `"HEAD"`, `"OPTIONS"`; case-insensitive).
-- `path`: the request path, e.g. `"/api/run"`.
-- `options` (optional):
-  - `headers`: an array of `[name, value]` string pairs.
-  - `body`: a `Uint8Array` (encode strings/JSON yourself).
-
-The resolved response is `{ status: number, headers: [name, value][], body: Uint8Array }`. `body` is always raw bytes; decode it with `TextDecoder` (or `JSON.parse(new TextDecoder().decode(resp.body))` for JSON).
-
-A POST with a JSON body and a custom header:
+`client.fetch(method, path, options?)` resolves to `{ status, headers, body }`; `body` is always a `Uint8Array` of raw bytes. There is no JSON convenience helper (the `json` feature is native-Rust only), so serialize the body and set `Content-Type` yourself:
 
 ```js
 const payload = new TextEncoder().encode(JSON.stringify({ input: "..." }));
@@ -219,9 +189,95 @@ if (resp.status !== 200) {
 const result = JSON.parse(new TextDecoder().decode(resp.body));
 ```
 
-There is no JSON convenience helper on the WASM side (the `json` feature is native-Rust only), so serialize the body and set `Content-Type` yourself as above.
+- `method`: an HTTP method string (`"GET"`, `"POST"`, `"PUT"`, `"DELETE"`, `"PATCH"`, `"HEAD"`, `"OPTIONS"`; case-insensitive).
+- `options.headers`: an array of `[name, value]` string pairs.
+- `options.body`: a `Uint8Array` (encode strings/JSON yourself).
 
-In Node (no bundler), pass the wasm bytes to `init` yourself:
+== Dart
+
+`client.fetch` mirrors the WASM signature with named arguments; the response's `body` is raw bytes (`Uint8List`), and there is no JSON convenience helper here either:
+
+```dart
+final payload = utf8.encode(jsonEncode({'input': '...'}));
+
+final resp = await client.fetch(
+  method: 'POST',
+  path: '/api/run',
+  options: FetchOptions(
+    headers: [Header(name: 'Content-Type', value: 'application/json')],
+    body: payload,
+  ),
+);
+
+if (resp.status != 200) {
+  throw Exception('enclave returned ${resp.status}');
+}
+final result = jsonDecode(utf8.decode(resp.body));
+```
+
+:::
+
+## Reconnects are automatic and re-attested
+
+A `Client` holds a single long-lived attested WebSocket channel. Since SDK 0.2.0 the client transparently re-establishes that channel when it drops (most commonly because the enclave [restarted or was upgraded](/create#lifecycle-commands), which tears the old connection down): the next request on a dead channel first re-dials the WebSocket, re-runs the full Noise handshake, and **re-verifies the attestation** against your pinned PCRs before anything is sent. A reconnect can never relax the checks you configured at connect time.
+
+The semantics worth knowing:
+
+- **A request that was already in flight when the channel died still fails** (native Rust: `Error::ConnectionClosed`; TypeScript: a rejected promise; Dart: an `EnclaviaError` with `retryable` set). The SDK never silently re-sends a request it already transmitted, because it cannot know whether the enclave acted on it before the channel dropped. If the request is idempotent, retry it at the application level; the retry itself will trigger the reconnect.
+- **Attestation failures on reconnect are terminal**, not retried. If the enclave now measures differently (for example after an [upgrade](/upgrades)), the reconnect fails closed.
+- **Only transient transport failures** are retried internally; protocol and verification errors surface immediately.
+- **Open streams are not resurrected.** A raw stream is stateful on the workload side, so a dropped stream stays dead; opening a replacement stream reconnects and re-attests first.
+- Native Rust can opt out with `ClientBuilder::auto_reconnect(false)` to restore fail-fast behavior; the TypeScript and Dart bindings always have auto-reconnect enabled.
+
+::: tip Expected right after a deploy or restart
+A failed in-flight request immediately after you restart, stop-then-start, or upgrade an enclave is **expected**, not a bug: the old attested channel went away with the old enclave. Retry the request and the client reconnects, re-verifying the new enclave's attestation. If the enclave was [upgraded](/upgrades) to a new image, its PCRs also changed, so the reconnect fails closed until you either re-pin the new values from `enclavia enclave status` or connect with `trustUpgrades` / `ClientBuilder::trust_upgrades` so the client follows the signed upgrade chain automatically.
+:::
+
+## Debug-mode enclaves
+
+If you're targeting a debug-mode enclave, the attestation document is a stub that echoes the handshake nonce instead of being COSE-signed. Opt in explicitly:
+
+::: tabs key:lang
+
+== Rust
+
+```rust
+let client = Client::builder("wss://...local-debug-url...")
+    .pcrs(Pcrs { pcr0: vec![], pcr1: vec![], pcr2: vec![] })
+    .debug_mode(true)
+    .build()
+    .await?;
+```
+
+== TypeScript
+
+```js
+const client = await connect(
+  "wss://...local-debug-url...",
+  { pcr0: "", pcr1: "", pcr2: "" },
+  { debugMode: true },
+);
+```
+
+== Dart
+
+```dart
+final client = await Client.connect(
+  url: 'wss://...local-debug-url...',
+  pcrs: Pcrs(pcr0: Uint8List(0), pcr1: Uint8List(0), pcr2: Uint8List(0)),
+  options: ConnectOptions(debugMode: true, trustUpgrades: null),
+);
+```
+
+:::
+
+Debug mode only verifies the nonce binding — never use it against production enclaves.
+
+## Browser and Node specifics
+
+The WASM packaging performs the same attestation verification as the native SDK, so the encrypted channel terminates in the user's browser and no proxy has to be trusted. A few things are specific to it:
+
+**Loading the module.** `init()` must run once before `connect`. Bundlers resolve the `.wasm` asset; in plain Node (no bundler), pass the wasm bytes yourself:
 
 ```js
 import { readFileSync } from "node:fs";
@@ -234,4 +290,20 @@ await init({
 });
 ```
 
-Non-HTTP protocols can use `client.openStream(firstBytes)` for a raw byte pipe over the same attested channel. `connect` also accepts `trustUpgrades: { backendUrl, enclaveId }`, mirroring the native `ClientBuilder::trust_upgrades`. See the [`enclavia-wasm` README](https://github.com/EnclaviaIO/enclavia/tree/master/enclavia-wasm) for the full surface and its two WebSocket-inherent differences from the native SDK.
+**Raw streams.** Non-HTTP protocols can use `client.openStream(firstBytes)` for a raw byte pipe over the same attested channel.
+
+**Upgrade trust.** `connect` accepts `trustUpgrades: { backendUrl, enclaveId }`, mirroring the native `ClientBuilder::trust_upgrades`.
+
+**WebSocket-inherent differences.** Custom upgrade headers are refused (production routing is by hostname), and TLS for the `wss://` hop belongs to the host runtime (the security boundary is the Noise channel inside it, not the TLS hop). See the [`enclavia-wasm` README](https://github.com/EnclaviaIO/enclavia/tree/master/enclavia-wasm) for the full surface.
+
+## Dart and Flutter specifics
+
+The Dart packaging wraps the same Rust core via UniFFI and works on Android, iOS, Linux, macOS, and Windows. A few things are specific to it:
+
+**The native library builds on your machine.** No prebuilt binaries ship with the package: Dart's Native Assets system compiles the Rust core locally (pinned toolchain, locked dependencies) the first time you `dart pub get` / `dart run` / `flutter run`, so a working `rustup` install is a hard requirement for development and CI.
+
+**Surface.** The API is `Client.connect` and `client.fetch` only; there is no raw stream API in the Dart bindings yet. `Pcrs` takes raw bytes rather than hex strings, and `FetchResponse.body` is a `Uint8List`.
+
+**Errors.** Failures surface as `EnclaviaError`. Transport-level failures carry `retryable: true` (safe to retry, which also triggers the reconnect); attestation and verification failures do not.
+
+See the [`enclavia-dart` README](https://github.com/EnclaviaIO/enclavia/tree/master/enclavia-dart) and its runnable `example/main.dart` for the full surface.
