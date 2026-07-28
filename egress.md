@@ -36,7 +36,7 @@ The practical consequence: **what the auditor sees in `enclavia reproduce` is wh
 
 ## The CLI
 
-`enclavia enclave create` takes three flags. Use the per-entry flags for ad-hoc allowlists, the file form for anything non-trivial.
+`enclavia enclave create` takes four egress flags. Use the per-entry flags for ad-hoc allowlists, the file form for anything non-trivial.
 
 ### Per-entry flags
 
@@ -50,9 +50,10 @@ enclavia enclave create \
 
 | Flag | Form | Notes |
 |------|------|-------|
-| `--egress-allow` | `HOST:PORT`, repeatable | `HOST` is a hostname, IPv4 literal, or IPv4 CIDR. TCP only today. |
+| `--egress-allow` | `HOST:PORT[/PROTO]`, repeatable | `HOST` is a hostname, IPv4 literal, or IPv4 CIDR. `PORT` is a number, or `*` to allow every port on that host (e.g. `1.2.3.4:*`). `PROTO` defaults to `tcp`, the only protocol supported today. |
 | `--egress-resolver` | `IPV4`, repeatable | DNS resolver(s) the in-enclave `unbound` forwards to. Required if any `--egress-allow` is a hostname. |
-| `--egress-config` | `PATH` | JSON file matching the [schema below](#json-schema). Mutually exclusive with the two flags above. |
+| `--egress-dns` | `allowlist` (default) or `open` | [DNS resolution mode](#dns-resolution-mode) of the in-enclave resolver. `open` requires at least one `--egress-resolver`. |
+| `--egress-config` | `PATH` | JSON file matching the [schema below](#json-schema). Mutually exclusive with the three flags above (the file's `dns` key replaces `--egress-dns`). |
 
 Three worked examples:
 
@@ -68,7 +69,27 @@ enclavia enclave create \
   --egress-allow 10.0.0.0/8:443
 ```
 
-Omit all three flags and the enclave is back to its pre-egress behaviour: no outbound network. This is the default, and it matches the behaviour of any enclave created before this feature shipped.
+Omit all the egress flags and the enclave is back to its pre-egress behaviour: no outbound network. This is the default, and it matches the behaviour of any enclave created before this feature shipped.
+
+### DNS resolution mode
+
+By default the in-enclave resolver only answers queries for hostnames that appear as allowlist entries; every other name gets a refusal. That is `--egress-dns allowlist`, and for most workloads it is what you want: the workload cannot even *learn* the IP of a host it is not allowed to reach.
+
+Some workloads legitimately resolve names they will never connect to (SDKs that probe regional endpoints, libraries that resolve a hostname just to pick a strategy). For those, `--egress-dns open` makes the resolver answer any query:
+
+```bash
+enclavia enclave create \
+  --egress-allow api.openai.com:443 \
+  --egress-resolver 1.1.1.1 \
+  --egress-dns open
+```
+
+Two things to keep straight:
+
+- **`open` only widens name resolution, never connectivity.** Connect-time enforcement is identical in both modes: a TCP connection still has to match an allowlist entry, or the in-enclave filter drops it. A workload in `open` mode can resolve `evil.example` and then fail to connect to it.
+- **`open` requires at least one `--egress-resolver`.** Without an upstream, the resolver would accept every query and then fail all of them; the CLI and the backend both reject that combination at submit time (`` `dns: open` requires at least one IPv4 entry in `resolvers` ``).
+
+In the JSON document the same choice is the top-level `"dns"` key (`"allowlist"` or `"open"`). Like everything else in the document it is baked into the measured image, so `enclavia reproduce` shows an auditor which mode the enclave runs.
 
 ### JSON schema
 
@@ -91,6 +112,7 @@ Validation rules (enforced identically by the CLI, the backend, and the in-encla
 |-------|------|
 | `version` | Must be `1`. Future schemas bump this and the CLI/backend negotiate. |
 | `resolvers[]` | IPv4 literals. Required if any `egress[].host` is a hostname; can be empty if you only allowlist IPs/CIDRs. |
+| `dns` | Optional: `"allowlist"` (the default when omitted) or `"open"`. See [DNS resolution mode](#dns-resolution-mode). `"open"` with an empty `resolvers[]` is rejected. |
 | `egress[].host` | RFC 1035 hostname, an IPv4 literal, or an IPv4 CIDR (`a.b.c.d/n`). |
 | `egress[].port` | `1..65535`. |
 | `egress[].protocol` | `"tcp"`. The only supported protocol today; the schema reserves room for `"udp"` in the type but actively rejects it at validation. |
