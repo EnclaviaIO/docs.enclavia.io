@@ -1,3 +1,7 @@
+---
+description: "Run the pingora-enclavia attested proxy yourself: NixOS module, Docker, target config"
+---
+
 # Self-host the proxy
 
 [`pingora-enclavia`](https://github.com/EnclaviaIO/pingora-enclavia) is the Pingora-based attested proxy behind the [hosted `/proxy/*` path](/proxy). It's a small Rust service that takes inbound HTTP/WebSocket, dials the WebSocket endpoint of a configured enclave, runs a Noise handshake and AWS Nitro attestation check, then byte-pumps the request through the encrypted tunnel.

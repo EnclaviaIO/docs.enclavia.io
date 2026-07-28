@@ -3,6 +3,9 @@ import llmstxt from 'vitepress-plugin-llms'
 import { tabsMarkdownPlugin } from 'vitepress-plugin-tabs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { cleanLlmsMarkdown } from '../scripts/llms-transform.mjs'
+
+const DOCS_DOMAIN = 'https://docs.enclavia.io'
 
 const LLMS_DESCRIPTION =
   'Documentation for Enclavia — running Docker images inside attested enclaves with end-to-end encryption from the browser. Public beta.'
@@ -27,11 +30,23 @@ function llmstxtDev({ siteTitle, sidebar, description, details }) {
       const srcDir = path.resolve('.')
       const sidebarLinks = sidebar
         .flatMap((group) => (group.items || []).map((item) => ({ ...item, group: group.text })))
-        .filter((item) => item.link && item.link !== '/')
+        .filter((item) => item.link)
+        .map((item) => ({ ...item, page: item.link === '/' ? '/index' : item.link }))
 
-      async function readSource(link) {
-        const file = path.resolve(srcDir, `${link.replace(/^\//, '')}.md`)
+      async function readSource(page) {
+        const file = path.resolve(srcDir, `${page.replace(/^\//, '')}.md`)
         return fs.readFile(file, 'utf8')
+      }
+
+      function splitFrontmatter(body) {
+        const m = body.match(/^---\n([\s\S]*?)\n---\n?/)
+        if (!m) return { frontmatter: '', content: body }
+        return { frontmatter: m[1], content: body.slice(m[0].length) }
+      }
+
+      function frontmatterDescription(frontmatter) {
+        const m = frontmatter.match(/^description:\s*(.+)$/m)
+        return m ? m[1].trim() : ''
       }
 
       async function buildLlmsTxt() {
@@ -48,7 +63,11 @@ function llmstxtDev({ siteTitle, sidebar, description, details }) {
         for (const [group, items] of groups) {
           lines.push(`### ${group}`, '')
           for (const item of items) {
-            lines.push(`- [${item.text}](${item.link}.md)`)
+            let description = ''
+            try {
+              description = frontmatterDescription(splitFrontmatter(await readSource(item.page)).frontmatter)
+            } catch {}
+            lines.push(`- [${item.text}](${DOCS_DOMAIN}${item.page}.md)${description ? `: ${description}` : ''}`)
           }
           lines.push('')
         }
@@ -60,11 +79,12 @@ function llmstxtDev({ siteTitle, sidebar, description, details }) {
         for (const item of sidebarLinks) {
           let body
           try {
-            body = await readSource(item.link)
+            body = await readSource(item.page)
           } catch {
             continue
           }
-          parts.push(`---\nurl: ${item.link}.md\n---\n${body.trimEnd()}\n`)
+          const { content } = splitFrontmatter(body)
+          parts.push(`---\nurl: ${DOCS_DOMAIN}${item.page}.md\n---\n${cleanLlmsMarkdown(content).trimEnd()}\n`)
         }
         return parts.join('\n')
       }
@@ -196,6 +216,13 @@ export default defineConfig({
       llmstxt({
         description: LLMS_DESCRIPTION,
         details: LLMS_DETAILS,
+        // Absolute URLs: agents that allowlist fetch targets can't follow
+        // relative links assembled from a base + path.
+        domain: DOCS_DOMAIN,
+        // Include the homepage in the corpus: its body carries the "What is
+        // Enclavia" orientation and disambiguates the beta hostnames, which
+        // the rest of the corpus uses without explanation.
+        excludeIndexPage: false,
       }),
       llmstxtDev({
         siteTitle: 'Enclavia',

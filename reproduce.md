@@ -1,3 +1,7 @@
+---
+description: "Rebuild an enclave image locally and compare PCRs against the recorded build"
+---
+
 # Reproduce an enclave's build
 
 `enclavia reproduce <enclave-id>` rebuilds an enclave's EIF on your machine and checks that the PCRs of your local build match the ones the backend recorded for the original build.

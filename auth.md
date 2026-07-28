@@ -1,3 +1,7 @@
+---
+description: "OAuth 2.1 (PKCE) login flow, credential storage, and headless/CI authentication"
+---
+
 # Authenticate
 
 The CLI authenticates with the backend over OAuth 2.1 (PKCE-S256) with a localhost loopback redirect. There is no password to type into the terminal; the browser session is the source of trust.

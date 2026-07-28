@@ -1,3 +1,7 @@
+---
+description: "Install the enclavia CLI with cargo install, Nix, or from source"
+---
+
 # Install the CLI
 
 The `enclavia` CLI is the primary entry point: authenticate, push images, create and manage enclaves. The source of truth is the public workspace at [`EnclaviaIO/enclavia`](https://github.com/EnclaviaIO/enclavia), published on crates.io as [`enclavia-cli`](https://crates.io/crates/enclavia-cli).

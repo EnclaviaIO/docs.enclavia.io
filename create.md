@@ -1,3 +1,7 @@
+---
+description: "Flags, create-then-push mechanics, storage, upgradability, and status meanings"
+---
+
 # Create an enclave
 
 `enclavia enclave create` reserves an enclave id and provisions a dedicated private registry repo for it at `<your-handle>/<enclave-uuid>`. The enclave starts in `waiting_for_image` and stays there until you `enclavia push` your container image into that repo. Builds are asynchronous; you poll for status.

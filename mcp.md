@@ -1,3 +1,7 @@
+---
+description: "Hosted MCP server setup for Claude, ChatGPT, Cursor, Codex CLI, and other MCP clients"
+---
+
 # Connect an AI agent with the MCP server
 
 Enclavia ships a [Model Context Protocol](https://modelcontextprotocol.io) server so you can manage your enclaves from any MCP-aware AI client — Claude, ChatGPT, Cursor, the OpenAI Codex CLI, or anything else that speaks the spec — using natural language. It's the same surface as the CLI (list enclaves, inspect status and logs, create, stop, destroy), exposed as MCP tools and authenticated against your Enclavia account.

@@ -1,3 +1,7 @@
+---
+description: "enclavia deploy: create the enclave, push the image, and follow the build in one command"
+---
+
 # Deploy in one command
 
 `enclavia deploy` is the fastest way to get a local Docker image running inside an enclave. It rolls the whole flow into a single command: it creates the enclave, pushes your image into the enclave's registry repo, and then follows the build live (spinner, streamed build log) until the enclave is `running`.
