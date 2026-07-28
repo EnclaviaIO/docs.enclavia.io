@@ -66,10 +66,28 @@ If you expect to push more than once, create with [`--upgradable`](#flags) up fr
 | `--visibility <private\|public>` | `private` | Registry visibility for anonymous pulls. `public` lets anyone pull the enclave's image without auth, which is what makes `enclavia reproduce` work for non-owners. Owner pulls and pushes are governed by ownership and unaffected. |
 | `--egress-allow <host:port[/proto]>` | unset (deny-all) | Permit one outbound destination. Repeatable. See [Outbound egress allowlist](/egress). |
 | `--egress-resolver <ipv4>` | unset | DNS resolver(s) the in-enclave `unbound` forwards to. Required if any `--egress-allow` is a hostname. Repeatable. |
-| `--egress-config <path>` | unset | Path to a JSON allowlist file. Mutually exclusive with `--egress-allow` / `--egress-resolver`. See [Outbound egress allowlist](/egress#json-schema). |
+| `--egress-dns <allowlist\|open>` | `allowlist` | DNS resolution mode for the in-enclave resolver: `allowlist` only resolves allowlisted hostnames, `open` resolves any name (but connect-time enforcement is unchanged). See [DNS resolution mode](/egress#dns-resolution-mode). |
+| `--egress-config <path>` | unset | Path to a JSON allowlist file. Mutually exclusive with the other egress flags. See [Outbound egress allowlist](/egress#json-schema). |
+| `--production` | off (debug) | Launch on real EC2 Nitro hardware instead of the default debug (local QEMU) enclave. Requires an entitled account. Immutable post-create. See [Debug vs production](#debug-vs-production) below. |
 | `--upgradable` | off | Mark the enclave as upgradable. Future pushes are staged rather than rejected. Immutable post-create. See [Staged deployments](/upgrades). |
 | `--control-key <name>` | unset (managed) | Use self-hosted control-key custody: register the named local key (from `enclavia key generate --yubikey`) as this enclave's control key, so only your hardware can authorize upgrades. Implies `--upgradable`. Immutable post-create. See [Control-key custody](/custody). |
+| `--anti-rollback` | off | Request synchronizer-backed anti-rollback protection for the enclave's persistent storage. Only takes effect on a storage enclave whose plan entitles it; otherwise the backend ignores it. Immutable post-create. See [Anti-rollback storage](#anti-rollback-storage) below. |
 | `--min-upgrade-delay <duration>` | unset (no minimum) | Minimum delay between confirming an upgrade and it taking effect, e.g. `30m`, `48h`, `7d`, or a bare number of seconds. Baked into the measured image, so the enclave itself rejects any earlier activation, including `--immediate`, even from the control-key holder. Requires `--upgradable`. Maximum 90 days. Immutable post-create. See [Minimum upgrade delay](/upgrades#minimum-upgrade-delay). |
+
+### Debug vs production
+
+Every enclave is created in one of two modes, chosen at create time and immutable afterwards:
+
+- **Debug** (the default). The enclave runs in a QEMU emulator on Enclavia's infrastructure, and its attestation documents are self-signed rather than AWS-CA-signed (that is what the `debug_mode` flag on the [client side](/connect) tells verifiers to accept). Debug enclaves are for development and testing only. They provide **no confidentiality and no hardware isolation**: whoever operates the host can read the enclave's memory and its data. Never put real secrets or user data in one. In exchange they are free, boot in seconds, and expose a runtime log (the guest serial console via `enclave logs`) that production enclaves do not.
+- **Production** (`--production`). The enclave runs on a dedicated real EC2 Nitro instance with hardware-enforced memory isolation, and its attestation chain is signed by AWS's Nitro certificate authority, so clients verify it with no `debug_mode` escape hatch. Production enclaves are billable, and there is no runtime log by design (the Nitro hypervisor gives the host no view into the guest).
+
+```bash
+enclavia enclave create --production --container-port 8080 --name my-api
+```
+
+Creating a production enclave requires an entitled account: a plan that includes production enclaves, or a saved payment method (add a card under Billing on the dashboard). Otherwise the create is rejected with `production enclaves require a paid plan or a saved payment method (add a card under Billing)`.
+
+The mode cannot be changed later. A workload developed against a debug enclave moves to production by creating a new enclave with `--production` and pushing the same image; the PCRs will differ (debug and production images are built differently), so clients re-pin against the production enclave's PCRs.
 
 ### Persistent storage
 
@@ -121,6 +139,25 @@ The answer is no, and the mechanism is a quirk of how KMS key policies work that
 The trust boundary that protects your data is the policy that AWS KMS enforces on the key, not Enclavia's operational discipline. We deliberately set things up so that even we cannot grant ourselves access.
 
 Lifecycle: `enclave stop` keeps the encrypted volume around so the next start can re-mount it. `enclave destroy` removes the record and the volume. Both `stop` and `restart` are hard terminations with no in-guest flush (see [Durability](#durability-your-process-can-be-killed-at-any-moment) above): the persisted state you get back on the next start is exactly what your workload had `fsync`ed to `/data`, and nothing more.
+
+#### Anti-rollback storage
+
+Encryption alone does not stop one storage attack: **rollback**. An operator with access to the backing volume could snapshot it, let your workload write new state, then restart the enclave against the old snapshot. The data is still authentic ciphertext that decrypts fine, it is just stale, which matters a great deal if the state is a counter, a ledger, a nonce store, or anything else that must never move backwards.
+
+`--anti-rollback` closes this. The enclave's storage client checkpoints the volume's state version with an independent synchronizer cluster (itself a set of attested enclaves) and, on every boot, refuses to mount storage that is older than the last checkpoint. The check is **fail-stop**: if the synchronizer disagrees or is unreachable, the enclave refuses to serve rather than silently running on possibly stale state. The synchronizer's trust anchors are baked into the measured image, so `enclavia reproduce` covers them like everything else.
+
+```bash
+enclavia enclave create \
+  --storage-size-bytes 268435456 \
+  --anti-rollback
+```
+
+Two conditions must hold for the flag to take effect, and if either fails the backend **ignores it** rather than erroring (check `synchronizer_enabled` in `enclave status --json` to confirm what you got):
+
+1. The enclave has persistent storage (`--storage-size-bytes`). Anti-rollback protects stored state; there is nothing to protect on a stateless enclave.
+2. Your plan entitles anti-rollback.
+
+Defaults off, immutable post-create.
 
 ## Timeout
 
