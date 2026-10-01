@@ -24,10 +24,12 @@ enclavia build myapp:candidate
 ```
 
 ```
-Building docker-daemon:myapp:candidate:latest into an EIF …
+Fetching builder source from github:EnclaviaIO/builder …
+Building docker-daemon:myapp:candidate into an EIF …
   output: ./enclavia-out
+… builder log …
 Build succeeded.
-Source:  docker-daemon:myapp:candidate:latest
+Source:  docker-daemon:myapp:candidate
 EIF:     ./enclavia-out/image.eif
 PCR0:    4f8c2a1b...
 PCR1:    7e3d9c0a...
@@ -49,9 +51,9 @@ Exit code `0` means the image builds into an EIF; any failure (missing builder, 
 | Flag | Default | Purpose |
 |------|---------|---------|
 | `--pull` | off | Pull `local_image` from its registry instead of the local Docker daemon. |
-| `--output-dir <dir>` | `./enclavia-out` | Directory to write `image.eif` and `pcr.json` into. |
+| `--output-dir <dir>` | `./enclavia-out` | Directory to write `image.eif` and `pcr.json` into (plus the `egress.json` policy that was baked in). |
 | `--container-port <port>` | `8080` | Port the container listens on inside the enclave. Match the `--container-port` you use (or will use) at `enclave create` time. |
-| `--debug` | off | Build the debug-mode EIF (what a non-`--production` enclave runs). Debug and production EIFs differ in PCRs, but an image that builds as one builds as the other, so the default (production-shaped) build is fine for a pass/fail gate. |
+| `--debug` | off | Build with debug-attestation trust settings (what a non-`--production` enclave runs). The builder only measures this into the synchronizer trust config, which local builds don't bake in, so today the EIF and its PCRs are the same with or without it. |
 | `--storage` | off | Build the storage-capable variant (LUKS+btrfs over NBD), matching an enclave created with `--storage-size-bytes`. |
 | `--egress-allow HOST:PORT[/PROTO]`, `--egress-resolver IPV4`, `--egress-dns allowlist\|open`, `--egress-config PATH` | none | Same [egress allowlist](/egress) flags as `enclave create`. Without any of them the empty deny-all policy is baked in, matching a create with no egress flags. |
 | `--builder-rev <git-rev>` | default branch tip | Pin the builder flake source to a specific git rev of the builder repo, so a CI gate doesn't move under you as the builder evolves. Overrides an exported `BUILDER_FLAKE`. |
@@ -67,3 +69,5 @@ Exit code `0` means the image builds into an EIF; any failure (missing builder, 
 ## How this differs from `enclavia reproduce`
 
 Both commands shell out to the same `builder` binary rather than reimplementing the build. [`enclavia reproduce`](/reproduce) rebuilds an *existing* enclave's recorded image and compares the resulting PCRs against what the backend stored, to verify a running enclave matches its claimed code. `enclavia build` has no enclave and no recorded row to compare against: it just builds whatever local image you give it and reports whether the build succeeded, plus the resulting PCRs, which is all a CI gate needs.
+
+Don't expect those PCRs to match the ones a deployed enclave reports for the same image. A real deploy also measures per-enclave values into the EIF (such as the enclave id and the pinned image digest), so its PCRs are unique to that enclave. Use `enclavia reproduce` when you need PCR equality.
