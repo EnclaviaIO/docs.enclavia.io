@@ -161,6 +161,7 @@ const sidebar = [
     text: 'Verify',
     items: [
       { text: 'Reproduce a build', link: '/reproduce' },
+      { text: 'Build as a CI gate', link: '/build' },
     ],
   },
 ]
